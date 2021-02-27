@@ -6,6 +6,7 @@
 #include "proc.h"
 #include "x86.h"
 #include "syscall.h"
+#include "date.h"
 
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.
@@ -165,46 +166,61 @@ int getdate(struct rtcdate *r) {
 
 }
 
+/* 
+  Added for hw1
+  Returns x in bcd format
+  ex 12 -> 0001 0010
+*/
+uint tobcd(uint x) {
+  uint conv = 0, i=0;
+  while(x > 0){
+    conv += (x%10 << 4*i);
+    x /= 10;
+    i++;
+  }
+  return conv;
+}
+
 /*
   Added for hw1
   Obtains user info to set the date and time of the system
   Returns 0 on success and -1 otherwise
   TODO
     Check validation ranges
-    Check if additional validation is needed (like getdate())
-    Figure out how to encode into bcd
     Figure out how to disable all interrupts and write to registers
     Test and debug
 */
 int setdate(struct rtcdate *r) {
-  // validate pointer size
+  // validate pointer
   if(sizeof(*r) != sizeof(struct rtcdate))
+    return -1;
+  if(argptr(1, (void*) &r, sizeof(struct rtcdate)) != 0)
+    return -1;
+  if(sys_fstat() == -1)
     return -1;
 
   // validate pointer fields
-  uint month, day;
-  uint[] max_day = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  uint second, minute, hour, month, day;
+  uint max_day[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-  if(r->second < 0 || r->second >= 60)  return -1;
-  if(r->minute < 0 || r->minute >= 60)  return -1;
-  if(r->hour < 0 || r->hour >= 23)      return -1;
-  if(month=r->month <=0 || month > 12)  return -1
-  if(day=r->day <= 0 || day > 31)      return -1;
-  if(day > max_day[month-1])            return -1;
+  if((second=r->second) < 0 || r->second >= 60)   return -1;
+  if((minute=r->minute) < 0 || r->minute >= 60)   return -1;
+  if((hour=r->hour) < 0 || r->hour >= 23)         return -1;
+  if((month=r->month) <=0 || month > 12)          return -1;
+  if((day=r->day) <= 0 || day > 31)               return -1;
+  if(day > max_day[month-1])                      return -1;
 
   // write values to the proper register
   // disable interrupts using pushcli()/popcli()
   // disable non-maskable interrupts
 
-  // properly encode values using binary code decimal (bcd)
-  // ie invert decoding performed in cmostime()
-  
-  // DECODING STEPS
-  // divide x by 2^4
-  // mult x by 10
-  // +
-  // mask x by & 0xF or & x with 1111
+  // encode base 10 values into binary code decimal (bcd)
+  second = tobcd(second);
+  minute = tobcd(minute);
+  hour = tobcd(hour);
+  month = tobcd(month);
+  day = tobcd(day);
+  // year = tobcd(r->year);
 
-  // ENCODING STEPS (reverse of encoding steps)
-  // ok just work it out on paper it's starting to make sense
+  return 0;
 }
