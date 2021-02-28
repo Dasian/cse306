@@ -2,7 +2,6 @@
 #include "kernel/stat.h"
 #include "kernel/date.h"
 #include "user.h"
-#include "kernel/lapic.c"
 
 /*
   Added for hw1
@@ -19,7 +18,7 @@
 int main(int argc, char* argv[]) {
 	// run user input checks
 	if(argc <= 6)
-		printf("%s\n", "usage: setdate [year] [day] [month] [hour] [min] [sec]");
+		printf(1, "%s\n", "usage: setdate [year] [day] [month] [hour] [min] [sec]");
 
 	struct rtcdate tmp;
 	tmp.year = *argv[1];
@@ -30,6 +29,6 @@ int main(int argc, char* argv[]) {
 	tmp.second = *argv[6];
 
 	if(setdate(&tmp))
-		printf("%s\n", "setdate failed");
+		printf(1, "%s\n", "setdate failed");
 	exit();
 }

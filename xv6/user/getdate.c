@@ -2,7 +2,7 @@
 #include "kernel/stat.h"
 #include "kernel/date.h"
 #include "user.h"
-#include "kernel/lapic.c"
+// #include "kernel/defs.h"
 
 /* 
   Added for hw1
@@ -19,7 +19,7 @@
 int main(int argc, char* argv[]) {
 	struct rtcdate tmp;
 	if(getdate(&tmp)) 
-		printf("%s\n", "getdate failed");
-	printf("Date: %i/%i/%i Time: %i %i:%i:%i",tmp.month, tmp.day, tmp.year, tmp.hour, tmp.min, tmp.sec);
+		printf(1, "%s\n", "getdate failed");
+	printf(1, "Date: %u/%u/%u Time:  %u:%u:%u",tmp.month, tmp.day, tmp.year, tmp.hour, tmp.minute, tmp.second);
 	exit();
 }

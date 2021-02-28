@@ -91,11 +91,17 @@ sys_uptime(void)
 }
 
 int sys_getdate(void) {
-  getdate();
-  return 0;
+  struct rtcdate x;
+  struct rtcdate *r = &x;
+  if(argptr(1, (void*) &r, sizeof(struct rtcdate)) != 0)
+    return -1;
+  return getdate(r);
 }
 
 int sys_setdate(void) {
-  setdate();
-  return 0;
+  struct rtcdate x;
+  struct rtcdate *r = &x;
+  if(argptr(1, (void*) &r, sizeof(struct rtcdate)) != 0)
+    return -1;
+  return setdate(r);
 }
