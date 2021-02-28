@@ -285,7 +285,7 @@ int timerrate(int *hz) {
   // countdown, prev target ticks, and curr target ticks
   // are global vars in this file
   int target_ticks = *hz;
-  int curr_ticks = -1; // used to track num ticks per sec
+  uint curr_ticks = 0; // used to track num ticks per sec
   int successes = 0;
   int range = 5;      // The target range is +- 5 of target
 
@@ -301,10 +301,18 @@ int timerrate(int *hz) {
     curr_ticks = tps();
 
     // Change countdown according to curr_ticks value
-    if(curr_ticks > target_ticks+range)
-      // make countdown larger
-    else if(curr_ticks < target_ticks-range)
-      // make countdown smaller
+    if(curr_ticks > target_ticks+range) {
+      // make countdown larger to try to slow it down
+      int new_countdown = countdown + 100000*(curr_ticks - target_ticks);
+      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
+        curr_ticks, target_ticks, countdown, new_countdown);
+    }
+    else if(curr_ticks < target_ticks-range) {
+      // make countdown smaller to try to speed it up
+      int new_countdown = countdown - 100000*(target_ticks - curr_ticks);
+      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
+        curr_ticks, target_ticks, countdown, new_countdown);
+    }
     else
       successes++;
   }
