@@ -235,14 +235,39 @@ void cmostime(struct rtcdate *r)
 
 /*
   Added for hw1
-  Returns the total number of ticks per second
+  Returns the total number of ticks in one second
 */
-int tps() {
+uint tps() {
 
-  int ticks = 0;
+  // get init time
+  struct rtcdate init_time;
+  struct rtcdate time;
+  cmosttime(&init_time);
 
-  // add up all the ticks per second here ?
+  // wait until the next second is reached
+  //  so we don't start counting in the middle of a sec
+  do {
+    cmosttime(&time);
+  }while(time.second == init_time.second)
 
+
+  // get first sysuptime (number of ticks since start)
+  acquire(&tickslock);
+  uint ticks1 = ticks;
+  release(&tickslock);
+
+  // wait for a second here
+  do {
+    cmosttime(&init_time);
+  }while(init_time.second == time.second);
+
+  // get second sysuptime
+  acquire(&tickslock);
+  uint ticks2 = ticks;
+  acquire(&tickslock);
+
+  // subtract both tick times to get num of ticks in 1 sec
+  return ticks2 - ticks1;
 }
 
 /*
