@@ -80,6 +80,8 @@ void            lapiceoi(void);
 void            lapicinit(void);
 void            lapicstartap(uchar, uint);
 void            microdelay(int);
+int 			timerrate(int *hz);
+extern 			int countdown;
 
 // log.c
 void            initlog(int dev);

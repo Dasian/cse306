@@ -45,7 +45,7 @@ volatile uint *lapic;  // Initialized in mp.c
 
 // hw 1 variables
 // countdown - num to countdown from in lapicinit
-int countdown = -1;
+countdown = -1;
 
 //PAGEBREAK!
 static void
@@ -233,89 +233,4 @@ void cmostime(struct rtcdate *r)
   r->year += 2000;
 }
 
-/*
-  Added for hw1
-  Returns the total number of ticks in one second
-*/
-uint tps() {
-
-  // get init time
-  struct rtcdate init_time;
-  struct rtcdate time;
-  cmosttime(&init_time);
-
-  // wait until the next second is reached
-  //  so we don't start counting in the middle of a sec
-  do {
-    cmosttime(&time);
-  }while(time.second == init_time.second)
-
-
-  // get first sysuptime (number of ticks since start)
-  acquire(&tickslock);
-  uint ticks1 = ticks;
-  release(&tickslock);
-
-  // wait for a second here
-  do {
-    cmosttime(&init_time);
-  }while(init_time.second == time.second);
-
-  // get second sysuptime
-  acquire(&tickslock);
-  uint ticks2 = ticks;
-  acquire(&tickslock);
-
-  // subtract both tick times to get num of ticks in 1 sec
-  return ticks2 - ticks1;
-}
-
-/*
-  Added for hw1
-  Changes the num of ticks per sec to hz
-  Returns 0 on success -1 otherwise
-  TODO
-    Limit range to [1, 1000]
-    Check if in userspace
-    Check the current ticks per second
-    Use that curr tick value to change countdown var
-    Do I move to lapic?
-*/
-int timerrate(int *hz) {
-  // countdown, prev target ticks, and curr target ticks
-  // are global vars in this file
-  int target_ticks = *hz;
-  uint curr_ticks = 0; // used to track num ticks per sec
-  int successes = 0;
-  int range = 5;      // The target range is +- 5 of target
-
-  // Function checks; range, user space
-  if(target < 1 || target > 1000) return -1;
-  // do a userspace check here
-
-  // Constantly modify countdown/update curr
-  // Break when actual num of ticks is in the target range
-  //  5 consecutive times
-  while(successes < 5) {
-    // Find the current number of ticks per second (tps)
-    curr_ticks = tps();
-
-    // Change countdown according to curr_ticks value
-    if(curr_ticks > target_ticks+range) {
-      // make countdown larger to try to slow it down
-      int new_countdown = countdown + 100000*(curr_ticks - target_ticks);
-      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
-        curr_ticks, target_ticks, countdown, new_countdown);
-    }
-    else if(curr_ticks < target_ticks-range) {
-      // make countdown smaller to try to speed it up
-      int new_countdown = countdown - 100000*(target_ticks - curr_ticks);
-      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
-        curr_ticks, target_ticks, countdown, new_countdown);
-    }
-    else
-      successes++;
-  }
-
-  return prev_target;
-}
+// moved to proc.c

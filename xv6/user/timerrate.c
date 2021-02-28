@@ -1,7 +1,8 @@
 #include "kernel/types.h"
 #include "kernel/stat.h"
-#include "defs.h"
-#include "user.h"
+#include "kernel/date.h"
+#include "kernel/defs.h"
+// #include "user.h"
 
 /*
 	Added for hw1
@@ -33,7 +34,7 @@ int main(int argc, char* argv[]) {
 		printf(1, "%s\n", "Usage: timerrate [hz]");
 		exit();
 	}
-	int ret = timerrate_cmdline(argv[1]);
+	int ret = timerrate_cmdline((int*) argv[1]);
 	printf(1, "Old target: %d New target: %d Return Value: %d",prev_target, curr_target, ret);
 	exit();
 }

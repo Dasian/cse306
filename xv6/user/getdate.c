@@ -20,6 +20,6 @@ int main(int argc, char* argv[]) {
 	struct rtcdate tmp;
 	if(getdate(&tmp)) 
 		printf(1, "%s\n", "getdate failed");
-	printf(1, "Date: %u/%u/%u Time:  %u:%u:%u",tmp.month, tmp.day, tmp.year, tmp.hour, tmp.minute, tmp.second);
+	printf(1, "Date: %d/%d/%d Time:  %d:%d:%d\n",tmp.month, tmp.day, tmp.year, tmp.hour, tmp.minute, tmp.second);
 	exit();
 }
