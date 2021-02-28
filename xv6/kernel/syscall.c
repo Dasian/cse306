@@ -104,6 +104,8 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_setdate(void);
+extern int sys_getdate(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -127,6 +129,8 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_setdate]   sys_setdate,
+[SYS_getdate]   sys_getdate;
 };
 
 void
@@ -187,6 +191,7 @@ uint tobcd(uint x) {
   Returns 0 on success and -1 otherwise
   TODO
     Check validation ranges
+    Check leap years
     Figure out how to disable all interrupts and write to registers
     Test and debug
 */
@@ -200,7 +205,7 @@ int setdate(struct rtcdate *r) {
     return -1;
 
   // validate pointer fields
-  uint second, minute, hour, month, day;
+  uint second, minute, hour, month, day, year;
   uint max_day[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
   if((second=r->second) < 0 || r->second >= 60)   return -1;
@@ -220,7 +225,13 @@ int setdate(struct rtcdate *r) {
   hour = tobcd(hour);
   month = tobcd(month);
   day = tobcd(day);
-  // year = tobcd(r->year);
+  year = tobcd(r->year);
+
+  pushcli();
+
+  // set stuff and mask n interrupts
+
+  popcli();
 
   return 0;
 }

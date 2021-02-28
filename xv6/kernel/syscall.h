@@ -20,5 +20,5 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
-#define SYS_gdate  22
-#define SYS_sdate  23
+#define SYS_getdate  22
+#define SYS_setdate  23
