@@ -43,6 +43,14 @@
 
 volatile uint *lapic;  // Initialized in mp.c
 
+// hw 1 variables
+// countdown - num to countdown from in lapicinit
+// prev - previous target ticks per sec
+// curr - current target ticks per sec
+int countdown = -1;
+int prev_target = -1;
+int curr_target = -1;
+
 //PAGEBREAK!
 static void
 lapicw(int index, int value)
@@ -57,7 +65,8 @@ lapicinit(void)
   if(!lapic)
     return;
 
-  int countdown = 10000000;
+  if(countdown < 0)
+    countdown = 10000000;
   // int target = 100;
 
   // Enable local APIC; set spurious interrupt vector.
@@ -226,4 +235,51 @@ void cmostime(struct rtcdate *r)
 
   *r = t1;
   r->year += 2000;
+}
+
+/*
+  Added for hw1
+  Changes the num of ticks per sec to hz
+  Returns target ticks value used prev
+  TODO
+    Limit range to [1, 1000]
+    Check if in userspace
+    Check the current ticks per second
+    Use that curr tick value to change countdown var
+    Do I move to lapic?
+*/
+int timerrate(int *hz) {
+  // countdown, prev target ticks, and curr target ticks
+  // are global vars in this file
+  int target_ticks = *hz;
+  int curr_ticks = -1; // used to calc tics per sec
+  int successes = 0;
+  int range = 5;      // The target range is +- 5 of target
+
+  // Function checks; range, user space
+  if(target < 1 || target > 1000) return -1;
+  // do a userspace check here
+
+  // setting previous tick target (global var)
+  if(prev_target == -1)
+    prev_target = 100;
+  else
+    prev_target = curr_target;
+
+  // Constantly modify countdown/update curr
+  // Break when 5 consecutive successes occur
+  while(successes < 5) {
+    // Find the current number of ticks per second (tps)
+    curr_ticks = tps();
+
+    // Change countdown according to curr_ticks value
+    if(curr_ticks > target_ticks+range)
+      // make countdown larger
+    else if(curr_ticks < target_ticks-range)
+      // make countdown smaller
+    else
+      successes++;
+  }
+
+  return prev_target;
 }
