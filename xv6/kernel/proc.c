@@ -613,7 +613,7 @@ int getdate(struct rtcdate *r) {
   // checks if pointer is valid
   if(sizeof(*r) != sizeof(struct rtcdate))
     return -1;
-  if(argptr(1, (void*) &r, sizeof(struct rtcdate)) != 0)
+  if(argptr(0, (void*) &r, sizeof(struct rtcdate)) < 0)
     return -1;
   //if(sys_fstat() == -1)
     //return -1;
@@ -621,7 +621,6 @@ int getdate(struct rtcdate *r) {
   // retrieves date and time and writes it into r
   cmostime(r);
   return 0;
-
 }
 
 /* 
@@ -654,7 +653,7 @@ int setdate(struct rtcdate *r) {
   // validate pointer
   if(sizeof(*r) != sizeof(struct rtcdate))
     return -1;
-  if(argptr(1, (void*) &r, sizeof(struct rtcdate)) != 0)
+  if(argptr(0, (void*) &r, sizeof(struct rtcdate)) < 0)
     return -1;
   //if(sys_fstat() == -1)
     //return -1;
@@ -699,91 +698,6 @@ int setdate(struct rtcdate *r) {
 
 
   popcli();
-
-  return 0;
-}
-
-/*
-  Added for hw1
-  Returns the total number of ticks in one second
-  tmp move all of this from lapic.c to proc.c
-*/
-uint tps() {
-
-  // get init time
-  struct rtcdate init_time;
-  struct rtcdate time;
-  cmostime(&init_time);
-
-  // wait until the next second is reached
-  //  so we don't start counting in the middle of a sec
-  do {
-    cmostime(&time);
-  }while(time.second == init_time.second);
-
-
-  // get first sysuptime (number of ticks since start)
-  acquire(&tickslock);
-  uint ticks1 = ticks;
-  release(&tickslock);
-
-  // wait for a second here
-  do {
-    cmostime(&init_time);
-  }while(init_time.second == time.second);
-
-  // get second sysuptime
-  acquire(&tickslock);
-  uint ticks2 = ticks;
-  acquire(&tickslock);
-
-  // subtract both tick times to get num of ticks in 1 sec
-  return ticks2 - ticks1;
-}
-
-/*
-  Added for hw1
-  Changes the num of ticks per sec to hz
-  Returns 0 on success -1 otherwise
-  TODO
-    Check if in userspace
-    Figure out how to run!!
-*/
-int timerrate(int *hz) {
-  // countdown, prev target ticks, and curr target ticks
-  // are global vars in this file
-  int target_ticks = *hz;
-  uint curr_ticks = 0; // used to track num ticks per sec
-  int successes = 0;
-  int range = 5;      // The target range is +- 5 of target
-
-  // Function checks; range, user space
-  if(target_ticks < 1 || target_ticks > 1000) return -1;
-  // do a userspace check here
-
-  // Constantly modify countdown/update curr
-  // Break when actual num of ticks is in the target range
-  //  5 consecutive times
-  while(successes < 5) {
-    // Find the current number of ticks per second (tps)
-    curr_ticks = tps();
-
-    // Change countdown according to curr_ticks value
-    if(curr_ticks > target_ticks*(1.05)) {
-      // make countdown larger to try to slow it down
-      int new_countdown = countdown + 100000*(curr_ticks - target_ticks);
-      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
-        curr_ticks, target_ticks, countdown, new_countdown);
-    }
-    else if(curr_ticks < target_ticks*(.95)) {
-      // make countdown smaller to try to speed it up
-      int new_countdown = countdown - 100000*(target_ticks - curr_ticks);
-      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
-        curr_ticks, target_ticks, countdown, new_countdown);
-    }
-    else
-      successes++;
-  }
 
   return 0;
 }
