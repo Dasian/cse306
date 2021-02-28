@@ -130,7 +130,7 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_setdate]   sys_setdate,
-[SYS_getdate]   sys_getdate;
+[SYS_getdate]   sys_getdate
 };
 
 void
