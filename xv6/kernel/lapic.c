@@ -45,11 +45,7 @@ volatile uint *lapic;  // Initialized in mp.c
 
 // hw 1 variables
 // countdown - num to countdown from in lapicinit
-// prev - previous target ticks per sec
-// curr - current target ticks per sec
 int countdown = -1;
-int prev_target = -1;
-int curr_target = -1;
 
 //PAGEBREAK!
 static void
@@ -239,8 +235,20 @@ void cmostime(struct rtcdate *r)
 
 /*
   Added for hw1
+  Returns the total number of ticks per second
+*/
+int tps() {
+
+  int ticks = 0;
+
+  // add up all the ticks per second here ?
+
+}
+
+/*
+  Added for hw1
   Changes the num of ticks per sec to hz
-  Returns target ticks value used prev
+  Returns 0 on success -1 otherwise
   TODO
     Limit range to [1, 1000]
     Check if in userspace
@@ -252,7 +260,7 @@ int timerrate(int *hz) {
   // countdown, prev target ticks, and curr target ticks
   // are global vars in this file
   int target_ticks = *hz;
-  int curr_ticks = -1; // used to calc tics per sec
+  int curr_ticks = -1; // used to track num ticks per sec
   int successes = 0;
   int range = 5;      // The target range is +- 5 of target
 
@@ -260,14 +268,9 @@ int timerrate(int *hz) {
   if(target < 1 || target > 1000) return -1;
   // do a userspace check here
 
-  // setting previous tick target (global var)
-  if(prev_target == -1)
-    prev_target = 100;
-  else
-    prev_target = curr_target;
-
   // Constantly modify countdown/update curr
-  // Break when 5 consecutive successes occur
+  // Break when actual num of ticks is in the target range
+  //  5 consecutive times
   while(successes < 5) {
     // Find the current number of ticks per second (tps)
     curr_ticks = tps();
