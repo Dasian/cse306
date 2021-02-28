@@ -106,7 +106,9 @@ int sys_setdate(void) {
   return setdate(r);
 }
 
+// is this right who knows lmao
 int sys_timerrate(void) {
-  int *hz;
-  return timerrate(&hz);
+  int x;
+  int *hz = &x;
+  return timerrate(hz);
 }
