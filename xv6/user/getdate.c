@@ -11,6 +11,7 @@
   TODO 
   	Test and debug this function
   	Add the proper includes
+  	Figure out how to connect to console
 */
 int getdate(struct rtcdate *r) {
   

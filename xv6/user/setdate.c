@@ -28,6 +28,7 @@ uint tobcd(uint x) {
     Check leap years
     Figure out the proper register numbers to write into
     Test and debug
+    Figure out how to connect to console
 */
 int setdate(struct rtcdate *r) {
   // validate pointer
