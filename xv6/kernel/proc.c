@@ -702,12 +702,3 @@ int setdate(struct rtcdate *r) {
 
   return 0;
 }
-
-/*
-  Added for hw1
-  TODO
-    All
-*/
-int timerrate(int *hz) {
-  return 0;
-}
