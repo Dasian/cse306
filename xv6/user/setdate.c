@@ -1,9 +1,8 @@
-// Driver for setdate()
 #include "kernel/types.h"
 #include "kernel/stat.h"
+#include "kernel/date.h"
 #include "user.h"
-#include "kernel/syscall.h"
-#include "kernel/syscall.c"
+#include "kernel/lapic.c"
 
 /* 
   Added for hw1
@@ -27,7 +26,7 @@ uint tobcd(uint x) {
   TODO
     Check validation ranges
     Check leap years
-    Figure out how to disable all interrupts and write to registers
+    Figure out the proper register numbers to write into
     Test and debug
 */
 int setdate(struct rtcdate *r) {
@@ -41,6 +40,7 @@ int setdate(struct rtcdate *r) {
 
   // validate pointer fields
   uint second, minute, hour, month, day, year;
+  int isleap = 0;
   uint max_day[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
   if((second=r->second) < 0 || r->second >= 60)   return -1;
@@ -48,7 +48,8 @@ int setdate(struct rtcdate *r) {
   if((hour=r->hour) < 0 || r->hour >= 23)         return -1;
   if((month=r->month) <=0 || month > 12)          return -1;
   if((day=r->day) <= 0 || day > 31)               return -1;
-  if(day > max_day[month-1])                      return -1;
+  if(!isleap && (day > max_day[month-1]))         return -1;
+  if(isleap && month == 2 && day > 29)	s		  return -1; // leap year check
 
   // encode base 10 values into binary code decimal (bcd)
   second = tobcd(second);
@@ -58,16 +59,23 @@ int setdate(struct rtcdate *r) {
   day = tobcd(day);
   year = tobcd(r->year);
 
-  uint time[6] = {second, minute, hour, month, day, year};
-
   // prevent interrupts
   pushcli();
 
   // write values to the registers
-  for(int i=0; i<6; i++) {
-    outb(0x70, 1<<7 | i);
-    outb(0x71, time[i]);
-  }
+  outb(0x70, 1<<7 | YEAR);
+  outb(0x71, year);
+  outb(0x70, 1<<7 | MONTH);
+  outb(0x71, MONTH);
+  outb(0x70, 1<<7 | DAY);
+  outb(0x71, day);
+  outb(0x70, 1<<7 | HOURS);
+  outb(0x71, hour);
+  outb(0x70, 1<<7 | MINS);
+  outb(0x71, minute);
+  outb(0x70, 1<<7 | SECS);
+  outb(0x71, second);
+
 
   popcli();
 
@@ -75,5 +83,19 @@ int setdate(struct rtcdate *r) {
 }
 
 int main(int argc, char* argv[]) {
+	// run user input checks
+	if(argc <= 6)
+		printf("%s\n", "usage: setdate [year] [day] [month] [hour] [min] [sec]");
+
+	struct rtcdate tmp;
+	tmp.year = *argv[1];
+	tmp.day = *argv[2];
+	tmp.month = *argv[3];
+	tmp.hour = *argv[4];
+	tmp.minute = *argv[5];
+	tmp.second = *argv[6];
+
+	if(setdate(&tmp))
+		printf("%s\n", "setdate failed");
 	exit();
 }

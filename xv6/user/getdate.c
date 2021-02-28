@@ -1,12 +1,16 @@
-// Driver for getdate()
 #include "kernel/types.h"
 #include "kernel/stat.h"
+#include "kernel/date.h"
 #include "user.h"
+#include "kernel/lapic.c"
 
-/* Added for hw1
+/* 
+  Added for hw1
   Retrieves the current date and time and writes it in the appropriate addr
   Returns 0 on success and -1 otherwise
-  TODO test and debug this function
+  TODO 
+  	Test and debug this function
+  	Add the proper includes
 */
 int getdate(struct rtcdate *r) {
   
@@ -25,5 +29,9 @@ int getdate(struct rtcdate *r) {
 }
 
 int main(int argc, char* argv[]) {
+	struct rtcdate tmp;
+	if(getdate(&tmp)) 
+		printf("%s\n", "getdate failed");
+	printf("Year %i Month %i Day %i %i:%i:%i",tmp.year, tmp.month, tmp.day, tmp.hour, tmp.min, tmp.sec);
 	exit();
 }
