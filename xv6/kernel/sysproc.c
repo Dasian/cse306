@@ -105,3 +105,8 @@ int sys_setdate(void) {
     return -1;
   return setdate(r);
 }
+
+int sys_timerrate(void) {
+  int *hz;
+  return timerrate(&hz);
+}

@@ -22,3 +22,4 @@
 #define SYS_close  21
 #define SYS_getdate  22
 #define SYS_setdate  23
+#define SYS_timerrate 24
