@@ -106,10 +106,11 @@ int sys_setdate(void) {
   return setdate(r);
 }
 
-// is this right who knows lmao
+// BIG ERRORS HERE PLZ FIX
 int sys_timerrate(void) {
   int x;
   int *hz = &x;
-  cprintf("%s\n", "hello from sys_timerrate\n");
+  x=-1; 
+  cprintf("sys_timerrate hz value: %d\n\n", x);
   return timerrate(hz);
 }

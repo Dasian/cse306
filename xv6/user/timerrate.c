@@ -36,7 +36,9 @@ int main(int argc, char* argv[]) {
 		printf(1, "%s\n", "Usage: timerrate [hz]");
 		exit();
 	}
-	int ret = timerrate_cmdline((int*) argv[1]);
-	printf(1, "Old target: %d New target: %d Return Value: %d\n",prev_target, curr_target, ret);
+	int hz = atoi(argv[1]);
+	printf(1,"\ntimerrate_cmdline in timerrate.c hz value: %d\n\n", hz);
+	int ret = timerrate_cmdline(&hz);
+	printf(1, "Old target: %d \nNew target: %d \nReturn Value: %d\n",prev_target, curr_target, ret);
 	exit();
 }

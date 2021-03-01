@@ -277,6 +277,7 @@ uint tps() {
     Add the missing global variables
     Figure out how to use global vars across files
     Possibly instead of global vars I can use lapicw in lapic.c?
+    reset successses everytime it fails
     Test and debug
 */
 int timerrate(int *hz) {
@@ -287,7 +288,7 @@ int timerrate(int *hz) {
   int successes = 0;
   int countdown = 10000000;
 
-  cprintf("%s\n", "hello from lapic.c!\n");
+  cprintf("timerrate in lapic.c hz value:%d\n\n", target_ticks);
 
   // Function checks; range, user space
   if(target_ticks < 1 || target_ticks > 1000) return -1;
