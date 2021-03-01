@@ -8,9 +8,12 @@
 	Added for hw1
 	TODO
 		Figure out how to test and link timerrate func
-		func is found in proc.c and sys_timerrate is found in syscall.c
-  		Create a cmdline function that
-  		returns the prev target ticks value
+		Can't run any of this
+		Can't make things so can't test
+		Logic is all set, current code is in lapic.c but might need to
+			be in proc.c can't figure that out yet
+		Make fil???
+		Still need to add address pointer checks in timerrate()
 */
 
 // maybe make these static? test later..
