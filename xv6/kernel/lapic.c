@@ -289,6 +289,7 @@ int timerrate(int *hz) {
   if(countdown < 0)
     countdown = 10000000;
   int increment; // changes the increment amount of countdown
+  double ratio;
 
   // can be changed to support different emulators
   //  but idk what the boolean var is
@@ -306,6 +307,21 @@ int timerrate(int *hz) {
   while(successes < 5) {
     // Find the current number of ticks per second (tps)
     curr_ticks = tps();
+
+    /*
+      maybe take the percentage of curr_ticks compared to target_ticks?
+
+      multiply that percentage by the current countdown and once the 
+      threshold is [90, 110]% then proceed with the current system?
+
+      ratio = curr_ticks/target_ticks
+      if ratio >=90 && ratio <= 110 -> do normal
+      else
+        if curr >> target -> make countdown *= ratio
+        if curr << target -> make countdown /= ratio
+    */
+
+    ratio = curr_ticks/target_ticks;
 
     // Change countdown according to curr_ticks value
     if(curr_ticks > target_ticks*(1.05)) {
