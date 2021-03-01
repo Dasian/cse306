@@ -290,6 +290,7 @@ int timerrate(int *hz) {
     countdown = 10000000;
   int increment; // changes the increment amount of countdown
   double ratio;
+  int new_countdown = -1;
 
   // can be changed to support different emulators
   //  but idk what the boolean var is
@@ -321,31 +322,42 @@ int timerrate(int *hz) {
         if curr << target -> make countdown /= ratio
     */
 
-    ratio = curr_ticks/target_ticks;
-
-    // Change countdown according to curr_ticks value
-    if(curr_ticks > target_ticks*(1.05)) {
-      // make countdown larger to try to slow it down
-      int new_countdown = countdown + increment*(curr_ticks - target_ticks);
-      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
-        curr_ticks, target_ticks, countdown, new_countdown);
-      countdown = new_countdown;
-      lapicw(0x0380/4, countdown); // number is TICW in lapic.c
-    }
-    else if(curr_ticks < target_ticks*(.95)) {
-      // make countdown smaller to try to speed it up
-      int new_countdown = countdown - increment/10*(target_ticks - curr_ticks);
-      if(new_countdown < 0) {
-        new_countdown = 50;
-        cprintf("Underflow of new_countdown\n");
+    ratio = ((double) curr_ticks) / ((double) target_ticks);
+    if(ratio >= .9 && ratio <= 1.1) {
+      // Change countdown according to curr_ticks value
+      if(curr_ticks > target_ticks*(1.05)) {
+        // make countdown larger to try to slow it down
+        new_countdown = countdown + increment*(curr_ticks - target_ticks);
+        cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
+          curr_ticks, target_ticks, countdown, new_countdown);
+        countdown = new_countdown;
+        lapicw(0x0380/4, countdown); // number is TICW in lapic.c
       }
+      else if(curr_ticks < target_ticks*(.95)) {
+        // make countdown smaller to try to speed it up
+        new_countdown = countdown - increment/10*(target_ticks - curr_ticks);
+        if(new_countdown < 0) {
+          new_countdown = 50;
+          cprintf("Underflow of new_countdown\n");
+        }
+        cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
+          curr_ticks, target_ticks, countdown, new_countdown);
+        countdown = new_countdown;
+        lapicw(0x0380/4, countdown); // number is TICW in lapic.c
+      }
+      else
+        successes++;
+    }
+    else {
+      new_countdown = countdown * ratio;
       cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
         curr_ticks, target_ticks, countdown, new_countdown);
       countdown = new_countdown;
       lapicw(0x0380/4, countdown); // number is TICW in lapic.c
+
     }
-    else
-      successes++;
+    if(countdown < 0)
+      countdown = 10000000;
   }
 
   if(prev_target < 0) {
