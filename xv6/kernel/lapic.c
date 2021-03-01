@@ -265,7 +265,8 @@ uint tps() {
   return ticks2 - ticks1;
 }
 
-
+static int countdown = -1;
+static int prev_target = -1;
 /*
   Added for hw1
   Changes the num of ticks per sec to hz
@@ -285,7 +286,8 @@ int timerrate(int *hz) {
   int target_ticks = *hz;
   uint curr_ticks = 0; // used to track num ticks per sec
   int successes = 0;
-  int countdown = 10000000;
+  if(countdown < 0)
+    countdown = 10000000;
   int increment; // changes the increment amount of countdown
 
   // can be changed to support different emulators
@@ -316,7 +318,11 @@ int timerrate(int *hz) {
     }
     else if(curr_ticks < target_ticks*(.95)) {
       // make countdown smaller to try to speed it up
-      int new_countdown = countdown - increment*(target_ticks - curr_ticks);
+      int new_countdown = countdown - increment/10*(target_ticks - curr_ticks);
+      if(new_countdown < 0) {
+        new_countdown = 50;
+        cprintf("Underflow of new_countdown\n");
+      }
       cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
         curr_ticks, target_ticks, countdown, new_countdown);
       countdown = new_countdown;
@@ -326,5 +332,10 @@ int timerrate(int *hz) {
       successes++;
   }
 
+  if(prev_target < 0) {
+    prev_target = 100;
+  }
+  *hz = prev_target;
+  prev_target = target_ticks;
   return 0;
 } 
