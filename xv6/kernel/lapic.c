@@ -286,6 +286,11 @@ int timerrate(int *hz) {
   uint curr_ticks = 0; // used to track num ticks per sec
   int successes = 0;
   int countdown = 10000000;
+  int increment; // changes the increment amount of countdown
+
+  // can be changed to support different emulators
+  //  but idk what the boolean var is
+  increment = 100000;
 
   // Function checks; range, user space
   if(target_ticks < 1 || target_ticks > 1000) return -1;
@@ -295,7 +300,7 @@ int timerrate(int *hz) {
 
   // Constantly modify countdown/update curr
   // Break when actual num of ticks is in the target range
-  //  5 consecutive times
+  //  5 total times
   while(successes < 5) {
     // Find the current number of ticks per second (tps)
     curr_ticks = tps();
@@ -303,7 +308,7 @@ int timerrate(int *hz) {
     // Change countdown according to curr_ticks value
     if(curr_ticks > target_ticks*(1.05)) {
       // make countdown larger to try to slow it down
-      int new_countdown = countdown + 100000*(curr_ticks - target_ticks);
+      int new_countdown = countdown + increment*(curr_ticks - target_ticks);
       cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
         curr_ticks, target_ticks, countdown, new_countdown);
       countdown = new_countdown;
@@ -311,7 +316,7 @@ int timerrate(int *hz) {
     }
     else if(curr_ticks < target_ticks*(.95)) {
       // make countdown smaller to try to speed it up
-      int new_countdown = countdown - 100000*(target_ticks - curr_ticks);
+      int new_countdown = countdown - increment*(target_ticks - curr_ticks);
       cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
         curr_ticks, target_ticks, countdown, new_countdown);
       countdown = new_countdown;
