@@ -601,12 +601,6 @@ procdump(void)
   Added for hw1
   Retrieves the current date and time and writes it in the appropriate addr
   Returns 0 on success and -1 otherwise
-  TODO 
-    Test and debug this function
-    Add the proper includes
-    Change year to 21 century?
-    Figure out how to connect to console
-    Figure out how to connect fstst (in sysfile.c)
 */
 int getdate(struct rtcdate *r) {
   
@@ -615,8 +609,6 @@ int getdate(struct rtcdate *r) {
     return -1;
   if(argptr(0, (void*) &r, sizeof(struct rtcdate)) < 0)
     return -1;
-  //if(sys_fstat() == -1)
-    //return -1;
 
   // retrieves date and time and writes it into r
   cmostime(r);
@@ -642,12 +634,6 @@ uint tobcd(uint x) {
   Added for hw1
   Obtains user info to set the date and time of the system
   Returns 0 on success and -1 otherwise
-  TODO
-    Check validation ranges
-    Check leap years
-    Test and debug
-    Figure out how to connect to console
-    Figure out how to check fstat
 */
 int setdate(struct rtcdate *r) {
   // validate pointer
@@ -655,21 +641,20 @@ int setdate(struct rtcdate *r) {
     return -1;
   if(argptr(0, (void*) &r, sizeof(struct rtcdate)) < 0)
     return -1;
-  //if(sys_fstat() == -1)
-    //return -1;
 
   // validate pointer fields
   uint second, minute, hour, month, day, year;
   int isleap = 0;
-  uint max_day[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  if((r -> year)%4 == 0)
+    isleap = 1;
+  uint max_day[12] = {31, 28+isleap, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
   if((second=r->second) < 0 || r->second >= 60)   return -1;
   if((minute=r->minute) < 0 || r->minute >= 60)   return -1;
   if((hour=r->hour) < 0 || r->hour >= 23)         return -1;
   if((month=r->month) <=0 || month > 12)          return -1;
   if((day=r->day) <= 0 || day > 31)               return -1;
-  if(!isleap && (day > max_day[month-1]))         return -1;
-  if(isleap && month == 2 && day > 29)            return -1; // leap year check
+  if(day > max_day[month-1])                      return -1;
 
   // encode base 10 values into binary code decimal (bcd)
   second = tobcd(second);
@@ -701,87 +686,3 @@ int setdate(struct rtcdate *r) {
 
   return 0;
 }
-/*
-  Added for hw1
-  Returns the total number of ticks in one second
-  tmp move all of this from lapic.c to proc.c
-*/
-uint tps() {
-
-  // get init time
-  struct rtcdate init_time;
-  struct rtcdate time;
-  cmostime(&init_time);
-
-  // wait until the next second is reached
-  //  so we don't start counting in the middle of a sec
-  do {
-    cmostime(&time);
-  }while(time.second == init_time.second);
-
-
-  // get first sysuptime (number of ticks since start)
-  acquire(&tickslock);
-  uint ticks1 = ticks;
-  release(&tickslock);
-
-  // wait for a second here
-  do {
-    cmostime(&init_time);
-  }while(init_time.second == time.second);
-
-  // get second sysuptime
-  acquire(&tickslock);
-  uint ticks2 = ticks;
-  acquire(&tickslock);
-
-  // subtract both tick times to get num of ticks in 1 sec
-  return ticks2 - ticks1;
-}
-
-/*
-  Added for hw1
-  Changes the num of ticks per sec to hz
-  Returns 0 on success -1 otherwise
-  TODO
-    Check if in userspace
-    Figure out how to run!!
-*/
-int timerrate(int *hz) {
-  // countdown, prev target ticks, and curr target ticks
-  // are global vars in this file
-  int target_ticks = *hz;
-  uint curr_ticks = 0; // used to track num ticks per sec
-  int successes = 0;
-  int range = 5;      // The target range is +- 5 of target
-
-  // Function checks; range, user space
-  if(target_ticks < 1 || target_ticks > 1000) return -1;
-  // do a userspace check here
-
-  // Constantly modify countdown/update curr
-  // Break when actual num of ticks is in the target range
-  //  5 consecutive times
-  while(successes < 5) {
-    // Find the current number of ticks per second (tps)
-    curr_ticks = tps();
-
-    // Change countdown according to curr_ticks value
-    if(curr_ticks > target_ticks*(1.05)) {
-      // make countdown larger to try to slow it down
-      int new_countdown = countdown + 100000*(curr_ticks - target_ticks);
-      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
-        curr_ticks, target_ticks, countdown, new_countdown);
-    }
-    else if(curr_ticks < target_ticks*(.95)) {
-      // make countdown smaller to try to speed it up
-      int new_countdown = countdown - 100000*(target_ticks - curr_ticks);
-      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
-        curr_ticks, target_ticks, countdown, new_countdown);
-    }
-    else
-      successes++;
-  }
-
-  return 0;
-} 

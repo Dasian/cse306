@@ -21,12 +21,12 @@ int main(int argc, char* argv[]) {
 		printf(1, "%s\n", "usage: setdate [year] [day] [month] [hour] [min] [sec]");
 
 	struct rtcdate tmp;
-	tmp.year = *argv[1];
-	tmp.day = *argv[2];
-	tmp.month = *argv[3];
-	tmp.hour = *argv[4];
-	tmp.minute = *argv[5];
-	tmp.second = *argv[6];
+	tmp.year = atoi(argv[1]);
+	tmp.day = atoi(argv[2]);
+	tmp.month = atoi(argv[3]);
+	tmp.hour = atoi(argv[4]);
+	tmp.minute = atoi(argv[5]);
+	tmp.second = atoi(argv[6]);
 
 	if(setdate(&tmp))
 		printf(1, "%s\n", "setdate failed");
