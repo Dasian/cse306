@@ -1,8 +1,7 @@
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "kernel/date.h"
-#include "kernel/defs.h"
-// #include "user.h"
+#include "user.h"
 
 /*
 	Added for hw1
