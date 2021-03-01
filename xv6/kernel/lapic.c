@@ -331,8 +331,8 @@ int timerrate(int *hz) {
         // make countdown smaller to try to speed it up
         new_countdown = countdown - increment/5*(target_ticks - curr_ticks);
         if(new_countdown < 0) {
-          new_countdown = 10000000;
-          cprintf("Countdown is negative, resetting\n");
+          new_countdown = 1000000;
+          cprintf("Countdown is negative, resetting to 1m\n");
         }
         cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
           curr_ticks, target_ticks, countdown, new_countdown);
