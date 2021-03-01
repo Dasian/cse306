@@ -124,7 +124,7 @@ void            wakeup(void*);
 void            yield(void);
 int 			getdate(struct rtcdate *r);
 int 			setdate(struct rtcdate *r);
-int 			timerrate(int *hz);
+// int 			timerrate(int *hz);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

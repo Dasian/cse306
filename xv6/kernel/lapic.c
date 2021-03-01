@@ -287,6 +287,8 @@ int timerrate(int *hz) {
   int successes = 0;
   int countdown = 10000000;
 
+  cprintf("%s\n", "hello from lapic.c!\n");
+
   // Function checks; range, user space
   if(target_ticks < 1 || target_ticks > 1000) return -1;
   // do a userspace check here

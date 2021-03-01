@@ -37,6 +37,6 @@ int main(int argc, char* argv[]) {
 		exit();
 	}
 	int ret = timerrate_cmdline((int*) argv[1]);
-	printf(1, "Old target: %d New target: %d Return Value: %d",prev_target, curr_target, ret);
+	printf(1, "Old target: %d New target: %d Return Value: %d\n",prev_target, curr_target, ret);
 	exit();
 }

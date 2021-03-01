@@ -110,6 +110,6 @@ int sys_setdate(void) {
 int sys_timerrate(void) {
   int x;
   int *hz = &x;
-  cprintf("%s\n", "hello from sys_timerrate");
+  cprintf("%s\n", "hello from sys_timerrate\n");
   return timerrate(hz);
 }
