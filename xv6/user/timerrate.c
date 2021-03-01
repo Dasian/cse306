@@ -25,6 +25,9 @@ int main(int argc, char* argv[]) {
 	}
 	int hz = atoi(argv[1]);
 	int ret = timerrate_cmdline(&hz);
-	printf(1, "Old target: %d \nNew target: %d \nReturn Value: %d\n",hz, curr_target, ret);
+	if(ret != -1)
+		printf(1, "Old target: %d \nNew target: %d \nReturn Value: %d\n",hz, curr_target, ret);
+	else
+		printf(1,"Incorrect range [1-1000] Return Value: %d\n", ret);
 	exit();
 }
