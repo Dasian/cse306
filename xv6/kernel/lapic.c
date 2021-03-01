@@ -43,10 +43,6 @@
 
 volatile uint *lapic;  // Initialized in mp.c
 
-// hw 1 variables
-// countdown - num to countdown from in lapicinit
-countdown = -1;
-
 //PAGEBREAK!
 static void
 lapicw(int index, int value)
@@ -61,8 +57,7 @@ lapicinit(void)
   if(!lapic)
     return;
 
-  if(countdown < 0)
-    countdown = 10000000;
+  int countdown = 10000000;
   // int target = 100;
 
   // Enable local APIC; set spurious interrupt vector.
