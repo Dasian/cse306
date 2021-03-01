@@ -272,12 +272,6 @@ static int prev_target = -1;
   Changes the num of ticks per sec to hz
   Returns 0 on success -1 otherwise
   TODO
-    Check if in userspace
-    Figure out how to run!!
-    Add the missing global variables
-    Figure out how to use global vars across files
-    Possibly instead of global vars I can use lapicw in lapic.c?
-    reset successses everytime it fails
     Test and debug
 */
 int timerrate(int *hz) {
