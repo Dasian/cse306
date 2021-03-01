@@ -6,13 +6,7 @@
 /*
 	Added for hw1
 	TODO
-		Figure out how to test and link timerrate func
-		Can't run any of this
-		Can't make things so can't test
-		Logic is all set, current code is in lapic.c but might need to
-			be in proc.c can't figure that out yet
-		Make fil???
-		Still need to add address pointer checks in timerrate()
+		none
 */
 
 // maybe make these static? test later..
@@ -37,7 +31,6 @@ int main(int argc, char* argv[]) {
 		exit();
 	}
 	int hz = atoi(argv[1]);
-	printf(1,"\ntimerrate_cmdline in timerrate.c hz value: %d\n\n", hz);
 	int ret = timerrate_cmdline(&hz);
 	printf(1, "Old target: %d \nNew target: %d \nReturn Value: %d\n",prev_target, curr_target, ret);
 	exit();

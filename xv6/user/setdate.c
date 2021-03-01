@@ -8,11 +8,7 @@
   Obtains user info to set the date and time of the system
   Returns 0 on success and -1 otherwise
   TODO
-    Check validation ranges
-    Check leap years
-    Test and debug
-    Figure out how to connect to console
-    MOVED TO proc.c
+    none
 */
 
 int main(int argc, char* argv[]) {

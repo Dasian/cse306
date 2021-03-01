@@ -246,7 +246,6 @@ uint tps() {
     cmostime(&time);
   }while(time.second == init_time.second);
 
-
   // get first sysuptime (number of ticks since start)
   acquire(&tickslock);
   uint ticks1 = ticks;
@@ -260,7 +259,7 @@ uint tps() {
   // get second sysuptime
   acquire(&tickslock);
   uint ticks2 = ticks;
-  acquire(&tickslock);
+  release(&tickslock);
 
   // subtract both tick times to get num of ticks in 1 sec
   return ticks2 - ticks1;
@@ -288,11 +287,11 @@ int timerrate(int *hz) {
   int successes = 0;
   int countdown = 10000000;
 
-  cprintf("timerrate in lapic.c hz value:%d\n\n", target_ticks);
-
   // Function checks; range, user space
   if(target_ticks < 1 || target_ticks > 1000) return -1;
   // do a userspace check here
+  if(argptr(0, (void*) &hz, sizeof(int)) != 0)
+    return -1;
 
   // Constantly modify countdown/update curr
   // Break when actual num of ticks is in the target range
@@ -305,7 +304,7 @@ int timerrate(int *hz) {
     if(curr_ticks > target_ticks*(1.05)) {
       // make countdown larger to try to slow it down
       int new_countdown = countdown + 100000*(curr_ticks - target_ticks);
-      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
+      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
         curr_ticks, target_ticks, countdown, new_countdown);
       countdown = new_countdown;
       lapicw(0x0380/4, countdown); // number is TICW in lapic.c
@@ -313,7 +312,7 @@ int timerrate(int *hz) {
     else if(curr_ticks < target_ticks*(.95)) {
       // make countdown smaller to try to speed it up
       int new_countdown = countdown - 100000*(target_ticks - curr_ticks);
-      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d",
+      cprintf("Current tps: %d Target tps: %d Old LAPIC: %d New LAPIC: %d\n",
         curr_ticks, target_ticks, countdown, new_countdown);
       countdown = new_countdown;
       lapicw(0x0380/4, countdown); // number is TICW in lapic.c

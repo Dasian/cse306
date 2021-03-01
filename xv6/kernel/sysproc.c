@@ -93,7 +93,7 @@ sys_uptime(void)
 int sys_getdate(void) {
   struct rtcdate x;
   struct rtcdate *r = &x;
-  if(argptr(1, (void*) &r, sizeof(struct rtcdate)) != 0)
+  if(argptr(0, (void*) &r, sizeof(struct rtcdate)) != 0)
     return -1;
   return getdate(r);
 }
@@ -101,16 +101,16 @@ int sys_getdate(void) {
 int sys_setdate(void) {
   struct rtcdate x;
   struct rtcdate *r = &x;
-  if(argptr(1, (void*) &r, sizeof(struct rtcdate)) != 0)
+  if(argptr(0, (void*) &r, sizeof(struct rtcdate)) != 0)
     return -1;
   return setdate(r);
 }
 
-// BIG ERRORS HERE PLZ FIX
+// no idea what does. please avert gaze
 int sys_timerrate(void) {
   int x;
   int *hz = &x;
-  x=-1; 
-  cprintf("sys_timerrate hz value: %d\n\n", x);
+  if(argptr(0, (void*) &hz, sizeof(int)) != 0)
+    return -1;
   return timerrate(hz);
 }
