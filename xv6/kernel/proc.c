@@ -651,7 +651,7 @@ int setdate(struct rtcdate *r) {
 
   if((second=r->second) < 0 || r->second >= 60)   return -1;
   if((minute=r->minute) < 0 || r->minute >= 60)   return -1;
-  if((hour=r->hour) < 0 || r->hour >= 23)         return -1;
+  if((hour=r->hour) < 0 || r->hour > 23)          return -1;
   if((month=r->month) <=0 || month > 12)          return -1;
   if((day=r->day) <= 0 || day > 31)               return -1;
   if(day > max_day[month-1])                      return -1;
