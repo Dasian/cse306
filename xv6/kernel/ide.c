@@ -58,7 +58,11 @@ idewait(int checkerr)
 // basically outb and inb but with 4 bytes instead of one
 void outl(uint port, uint *data) {
   for(int i=0; i < 4; i++) {
-    outb(port+(i*8), *( data+(i*8) ) );
+    uint tmp = (*data) & (0xFF << i*8);
+    if(i>0) {
+      tmp = tmp >> i*8;
+    }
+    outb(port+(i*8), tmp);
   }
 }
 
@@ -309,11 +313,4 @@ iderw(struct buf *b)
 
 
   release(&idelock);
-}
-
-// create a physical region descriptor table for dma transfer
-char* create_table(uint addr, uint numb) {
-  pde_t* table __attribute__ (aligned(4)) = setupkvm();
-  // mappages ?
-  uint entry = addr << 32 | numb << 16 | 0x1 << 7;
 }
