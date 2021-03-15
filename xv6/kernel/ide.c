@@ -25,7 +25,10 @@
 #define IDE_CMD_RDMUL 0xc4
 #define IDE_CMD_WRMUL 0xc5
 
-#define PCI 1 // MAYBE MOVE THIS AND LET IT BE CHANGED BY MAKE
+#define DMA 1 // MAYBE MOVE THIS AND LET IT BE CHANGED BY MAKE
+#define DEBUG 0
+#define CONFIG_ADDR   0xCF8
+#define CONFIG_DATA   0xCFC
 
 // idequeue points to the buf now being read/written to the disk.
 // idequeue->qnext points to the next buf to be processed.
@@ -54,7 +57,7 @@ idewait(int checkerr)
 
 // basically outb and inb but with 4 bytes instead of one
 void outl(uint port, uint *data) {
-  for(int i=0; i<4; i++) {
+  for(int i=0; i < 4; i++) {
     outb(port+(i*8), *( data+(i*8) ) );
   }
 }
@@ -69,14 +72,14 @@ uint inl(uint port) {
 }
 
 // This was copied from the PCI wiki
-// make vars longer like wiki
+// It reads words from the config area
 uint pci_read_config(uint bus, uint slot, uint func, uint offset) {
 
   uint address = (uint) ((bus << 16) | (slot << 11) | (func << 8) 
     | (offset & 0xfc) | ((uint) 0x80000000));
 
-  outl(0xCF8, &address);
-  uint tmp = (uint)((inl(0xCFC) >> ((offset & 2) * 8)) & 0xffff);
+  outl(CONFIG_ADDR, &address);
+  uint tmp = (uint)((inl(CONFIG_DATA) >> ((offset & 2) * 8)) & 0xffff);
   
   return tmp; 
 }
@@ -84,71 +87,29 @@ uint pci_read_config(uint bus, uint slot, uint func, uint offset) {
 /*
   Changes for hw2
   TODO:
+    Figure out how to connect the device for testing
     Add a macro to make with or w/o the DMA stuff
     Figure out how to write to cmd register
     Make sure the addresses and reading is done correctly
     General Testing
+
+    attempted to do -device [the things listed]
+    piix3-ide
+    piix3-ide-xen
+    piix4-ide
+
+    it did not work :(
 */
 void
 ideinit(void)
 {
   int i;
   uint vendor, device;
-  uint func = 0, bus = 0, slot;
+  uint func = 0, bus = 1, slot;
 
   initlock(&idelock, "ide");
   ioapicenable(IRQ_IDE, ncpu - 1);
   idewait(0);
-
-  // Runs pci code if flag is set during compilation
-  if(PCI) {
-
-    // Checks to make sure the proper slot + id pair exists
-    for(slot=0; slot<32; slot++) {
-      device = 0; 
-      vendor = pci_read_config(bus, slot, func, 0);
-      cprintf("VendorID slot %d: %d\n", slot, vendor);
-      device = pci_read_config(bus, slot, func, 2);
-      cprintf("DeviceID %d\n", device);
-      if(vendor != 0xFFFF && vendor == 0x8086) {
-        device = pci_read_config(bus, slot, func, 2);
-      }
-      if(device == 0x7010) {
-        cprintf("device found idk"); // doesn't reach here
-        break;
-      }
-    }
-
-    // extract Base addr register [reg 0x08 offset 20; 32 bits]
-    // include register and offset somehow
-    uint addr = (uint) ((bus << 16) | (slot << 11) | (func << 8)
-      | (0x20) | ((uint) 0x80000000));
-
-    // check these addresses
-    // might need to adjust base address based on the type...
-    outl(0xCF8, &addr);
-    base_addr = inl(0xCFC);
-
-    // convert base addr
-    // int is_port_space = base_addr & 0x1; 
-    base_addr = (base_addr >> 4) << 4;
-
-    // Enabling DMA mode
-    // read cmd reg at 0x4 in pci config space
-    addr = (uint) ((bus << 16) | (slot << 11) | (func << 8) 
-      | (0x4) | ((uint) 0x80000000));
-    outl(0xCF8, &addr);
-    uint cmd = (uint)((inl(0xCFC) >> ((0 & 2) * 8)) & 0xffff);
-
-    // set bit 0 (0x1)
-    cmd = cmd | 0x1;
-
-    // write back to the reg; not sure if this works as intended
-    // addr isn't the actual addr there are flags that tell them what
-    // we want
-    // outb(some_base_addr + reg - offset, cmd) ??
-    outl(0x1f7, &cmd);
-  }
 
   // Check if disk 1 is present
   outb(0x1f6, 0xe0 | (1<<4));
@@ -161,6 +122,70 @@ ideinit(void)
 
   // Switch back to disk 0.
   outb(0x1f6, 0xe0 | (0<<4));
+
+  // Runs pci code if flag is set during compilation
+  #ifdef DMA 
+    int pci_found = 0;
+    // Checks to make sure the proper slot + id pair exists
+    for(bus = 0; bus<256; bus++){
+      for(slot=0; slot<32; slot++) {
+        device = 0; 
+        vendor = pci_read_config(bus, slot, func, 0);
+
+        // DEBUG statements
+        if(DEBUG && vendor != 0xFFFF)
+          cprintf("Detected VendorID slot %d: %d\n", slot, vendor);
+        device = pci_read_config(bus, slot, func, 2);
+        if(DEBUG && device != 4607)
+          cprintf("Detected DeviceID %d\n", device);
+
+        if(vendor != 0xFFFF && vendor == 0x8086) {
+          device = pci_read_config(bus, slot, func, 2);
+        }
+        if(device == 0x7010) {
+          if(DEBUG)
+            cprintf("device found!!!"); // doesn't reach here
+          pci_found = 1;
+          break;
+        }
+      }
+    }
+      if(pci_found) {
+        // extract Base addr register [reg 0x08 offset 20; 32 bits]
+        // include register and offset somehow
+        uint addr = (uint) ((bus << 16) | (slot << 11) | (func << 8)
+          | (0x20) | ((uint) 0x80000000));
+
+        // check these addresses
+        // might need to adjust base address based on the type...
+        outl(CONFIG_ADDR, &addr);
+        base_addr = inl(CONFIG_DATA);
+
+        // convert base addr
+        // int is_port_space = base_addr & 0x1; 
+        base_addr = (base_addr >> 4) << 4;
+
+        // Enabling DMA mode
+        // read cmd reg at 0x4 in pci config space
+        addr = (uint) ((bus << 16) | (slot << 11) | (func << 8) 
+          | (0x4) | ((uint) 0x80000000));
+        outl(CONFIG_ADDR, &addr);
+        uint cmd = (uint)((inl(CONFIG_DATA) >> ((0 & 2) * 8)) & 0xffff);
+
+        // set bit 0 (0x1)
+        cmd = cmd | 0x1;
+
+        // write back to the reg; not sure if this works as intended
+        // outb(some_base_addr + reg - offset, cmd) ??
+        // This specifies WHAT we want written
+        outl(CONFIG_DATA, &cmd);
+        // This specifies where we want it written
+        outl(CONFIG_ADDR, &addr);
+      }
+      else {
+        cprintf("PCI bus not detected. Further PCI bus operations will not work.\n");
+      }
+  #endif
 }
 
 // Start the request for b.  Caller must hold idelock.
@@ -284,4 +309,11 @@ iderw(struct buf *b)
 
 
   release(&idelock);
+}
+
+// create a physical region descriptor table for dma transfer
+char* create_table(uint addr, uint numb) {
+  pde_t* table __attribute__ (aligned(4)) = setupkvm();
+  // mappages ?
+  uint entry = addr << 32 | numb << 16 | 0x1 << 7;
 }
