@@ -12,7 +12,13 @@
 #include "proc.h"
 #include "x86.h"
 
+// ports
 #define COM1    0x3f8
+#define COM2    0x2f8
+
+// additional vars copied from console.c
+#define BACKSPACE 0x100
+static ushort *crt = (ushort*)P2V(0xb8000);  // CGA memory
 
 static int uart;    // is there a uart?
 
@@ -48,16 +54,56 @@ uartinit(void)
     uartputc(*p);
 }
 
-void
+// added static for hw3; not sure
+static void
 uartputc(int c)
 {
-  int i;
+  // Replacement code that allows for console editing before enter
+  // Copied from cgaputc() in console.c
+  int pos;
 
+  // Cursor position: col + 80*row.
+  outb(COM1, 14);
+  pos = inb(COM1+1) << 8;
+  outb(COM1, 15);
+  pos |= inb(COM1+1);
+
+  if(c == '\n')
+    pos += 80 - pos%80;
+  else if(c == BACKSPACE){
+    if(pos > 0) --pos;
+  } else
+    crt[pos++] = (c&0xff) | 0x0700;  // black on white
+
+  if(pos < 0 || pos > 25*80)
+    panic("pos under/overflow");
+
+  if((pos/80) >= 24){  // Scroll up.
+    memmove(crt, crt+80, sizeof(crt[0])*23*80);
+    pos -= 80;
+    memset(crt+pos, 0, sizeof(crt[0])*(24*80 - pos));
+  }
+
+  outb(COM1, 14);
+  outb(COM1+1, pos>>8);
+  outb(COM1, 15);
+  outb(COM1+1, pos);
+  crt[pos] = ' ' | 0x0700;
+
+  /*
+  This code writes to the COM1 serial port
+    First checks that the serial port is not busy
+
+  Removed for some reason ? maybe don't remove ?
+  
+  int i;
   if(!uart)
     return;
   for(i = 0; i < 128 && !(inb(COM1+5) & 0x20); i++)
     microdelay(10);
   outb(COM1+0, c);
+  */
+
 }
 
 static int
