@@ -10,6 +10,9 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+// general debug statements
+#define DEBUG 0
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
