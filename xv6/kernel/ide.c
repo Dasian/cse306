@@ -26,7 +26,6 @@
 #define IDE_CMD_WRMUL 0xc5
 
 #define DMA 1 // MAYBE MOVE THIS AND LET IT BE CHANGED BY MAKE
-#define DEBUG 0
 #define CONFIG_ADDR   0xCF8
 #define CONFIG_DATA   0xCFC
 
