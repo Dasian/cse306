@@ -11,6 +11,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "memlayout.h"
 
 // ports
 #define COM1    0x3f8
@@ -19,13 +20,95 @@
 // additional vars copied from console.c
 #define BACKSPACE 0x100
 static ushort *crt = (ushort*)P2V(0xb8000);  // CGA memory
+static struct {
+  struct spinlock lock;
+  int locking;
+} com1_cons, com2_cons;
+#define INPUT_BUF 128
+struct {
+  char buf[INPUT_BUF];
+  uint r;  // Read index
+  uint w;  // Write index
+  uint e;  // Edit index
+} input;
+
+#define C(x)  ((x)-'@')  // Control-x
+
+static void uartputc();
 
 static int uart;    // is there a uart?
+
+// These two funcs are similar to consoleread/write
+// Used to define action in devsw table
+// These can't be copied from console.c
+int uartwrite(struct inode *ip, char *buf, int n) {
+  int i;
+
+  iunlock(ip);
+  acquire(&com1_cons.lock);
+  for(i = 0; i < n; i++)
+    consputc(buf[i] & 0xff);
+  release(&com1_cons.lock);
+  ilock(ip);
+
+  return n;
+}
+/*
+  I think the input variable is what is currently written 
+  in the console?
+  I just copied the input code from console, this file is
+    basically a copy
+*/
+int uartread(struct inode *ip, char *dst, int n) {
+  uint target;
+  int c;
+
+  iunlock(ip);
+  target = n;
+  acquire(&com1_cons.lock);
+  while(n > 0){
+    while(input.r == input.w){
+      if(myproc()->killed){
+        release(&com1_cons.lock);
+        ilock(ip);
+        return -1;
+      }
+      sleep(&input.r, &com1_cons.lock);
+    }
+    c = input.buf[input.r++ % INPUT_BUF];
+    if(c == C('D')){  // EOF
+      if(n < target){
+        // Save ^D for next time, to make sure
+        // caller gets a 0-byte result.
+        input.r--;
+      }
+      break;
+    }
+    *dst++ = c;
+    --n;
+    if(c == '\n')
+      break;
+  }
+  release(&com1_cons.lock);
+  ilock(ip);
+
+  return target - n;
+}
 
 void
 uartinit(void)
 {
   char *p;
+
+  // init code modeled after consoleinit() in consol.c
+  initlock(&com1_cons.lock, "com1_console") ?
+
+  devsw[COM].write = uartwrite;
+  devsw[COM].read = uartread;
+  com1_cons.locking = 1;
+
+  ioapicenable(IRQ_KBD, 0);
+  // end of copied code
 
   // Turn off the FIFO
   outb(COM1+2, 0);
@@ -95,7 +178,7 @@ uartputc(int c)
     First checks that the serial port is not busy
 
   Removed for some reason ? maybe don't remove ?
-  
+
   int i;
   if(!uart)
     return;
@@ -131,7 +214,48 @@ void
 uartintr(void)
 {
   if(DEBUG)
-    printf("%s\n", "UART.c is being called!");
+    printf("%s\n", "uartintr() is being called!");
   // Additional mirroring code
   // consoleintr(uartgetc);
+
+  // These are the contents of consoleintr;; not sure if need
+  int c, doprocdump = 0;
+
+  acquire(&cons.lock);
+  while((c = getc()) >= 0){
+    switch(c){
+    case C('P'):  // Process listing.
+      // procdump() locks cons.lock indirectly; invoke later
+      doprocdump = 1;
+      break;
+    case C('U'):  // Kill line.
+      while(input.e != input.w &&
+            input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+        input.e--;
+        consputc(BACKSPACE);
+      }
+      break;
+    case C('H'): case '\x7f':  // Backspace
+      if(input.e != input.w){
+        input.e--;
+        consputc(BACKSPACE);
+      }
+      break;
+    default:
+      if(c != 0 && input.e-input.r < INPUT_BUF){
+        c = (c == '\r') ? '\n' : c;
+        input.buf[input.e++ % INPUT_BUF] = c;
+        consputc(c);
+        if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
+          input.w = input.e;
+          wakeup(&input.r);
+        }
+      }
+      break;
+    }
+  }
+  release(&cons.lock);
+  if(doprocdump) {
+    procdump();  // now call procdump() wo. cons.lock held
+  }
 }
