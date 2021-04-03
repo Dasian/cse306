@@ -11,7 +11,11 @@ struct stat;
 struct superblock;
 
 // general debug statements
-#define DEBUG 0
+#define DEBUG 1
+
+// if defined it will run HW3 edits in console and uart
+#define HW3   1
+// #define HW3_RW 1
 
 // bio.c
 void            binit(void);

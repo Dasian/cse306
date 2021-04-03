@@ -128,6 +128,8 @@ panic(char *s)
 #define CRTPORT 0x3d4
 static ushort *crt = (ushort*)P2V(0xb8000);  // CGA memory
 
+#define COM1 0x3f8
+
 static void
 cgaputc(int c)
 {
@@ -162,6 +164,27 @@ cgaputc(int c)
   crt[pos] = ' ' | 0x0700;
 }
 
+// this is a replacement and copy of uartputc
+#ifdef HW3 
+void consputc_helper(int c) {
+  #ifndef HW3_RW
+  int i;
+  for(i = 0; i < 128 && !(inb(COM1+5) & 0x20); i++)
+    microdelay(10);
+  outb(COM1+0, c);
+  #endif
+}
+
+// replacement and copy of uartgetc
+static int consgetc(void) {
+  #ifndef HW3_RW
+  if(!(inb(COM1+5) & 0x01))
+    return -1;
+  return inb(COM1+0);
+  #endif
+}
+#endif
+
 void
 consputc(int c)
 {
@@ -170,13 +193,20 @@ consputc(int c)
     for(;;)
       ;
   }
-  // beginning of mirroring code
-  /*
+  // beginning of mirroring code; uartputc replaced by helper
+  #ifdef HW3
+  if(c == BACKSPACE){
+    consputc_helper('\b'); consputc_helper(' '); consputc_helper('\b');
+  } else
+    consputc_helper(c);
+  #endif
+
+  #ifndef HW3
   if(c == BACKSPACE){
     uartputc('\b'); uartputc(' '); uartputc('\b');
   } else
     uartputc(c);
-    */
+  #endif
   // end of mirroring code
   cgaputc(c);
 }
@@ -195,9 +225,18 @@ void
 consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
-
+  if(DEBUG)
+    cprintf("(%s)\n", "Entering consoleintr");
   acquire(&cons.lock);
-  while((c = getc()) >= 0){
+  // c = getc() is the original condition
+  while(
+    #ifdef HW3
+    (c = consgetc())
+    #endif
+    #ifndef HW3
+    (c=getc())
+    #endif
+     >= 0){
     switch(c){
     case C('P'):  // Process listing.
       // procdump() locks cons.lock indirectly; invoke later

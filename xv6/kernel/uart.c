@@ -12,18 +12,20 @@
 #include "proc.h"
 #include "x86.h"
 #include "memlayout.h"
+// #include "user/user.h"
 
 // ports
 #define COM1    0x3f8
 #define COM2    0x2f8
 
+#ifdef HW3
 // additional vars copied from console.c
 #define BACKSPACE 0x100
-static ushort *crt = (ushort*)P2V(0xb8000);  // CGA memory
+// static ushort *crt = (ushort*)P2V(0xb8000);  // CGA memory
 static struct {
   struct spinlock lock;
   int locking;
-} com1_cons, com2_cons;
+} com1_cons;
 #define INPUT_BUF 128
 struct {
   char buf[INPUT_BUF];
@@ -33,21 +35,27 @@ struct {
 } input;
 
 #define C(x)  ((x)-'@')  // Control-x
+#endif
 
-static void uartputc();
+// static void uartputc();
 
 static int uart;    // is there a uart?
 
 // These two funcs are similar to consoleread/write
 // Used to define action in devsw table
 // These can't be copied from console.c
+/*
+  read and write need to distinguish btwn
+  com1 and com2 through ip->minor
+*/
+#ifdef HW3
 int uartwrite(struct inode *ip, char *buf, int n) {
   int i;
 
   iunlock(ip);
   acquire(&com1_cons.lock);
   for(i = 0; i < n; i++)
-    consputc(buf[i] & 0xff);
+    uartputc(buf[i] & 0xff);
   release(&com1_cons.lock);
   ilock(ip);
 
@@ -94,20 +102,22 @@ int uartread(struct inode *ip, char *dst, int n) {
 
   return target - n;
 }
-
+#endif
 void
 uartinit(void)
 {
   char *p;
 
   // init code modeled after consoleinit() in consol.c
-  initlock(&com1_cons.lock, "com1_console") ?
+  #ifdef HW3
+  initlock(&com1_cons.lock, "com1_console");
 
   devsw[COM].write = uartwrite;
   devsw[COM].read = uartread;
   com1_cons.locking = 1;
 
-  ioapicenable(IRQ_KBD, 0);
+  //ioapicenable(IRQ_KBD, 0);
+  #endif
   // end of copied code
 
   // Turn off the FIFO
@@ -138,11 +148,12 @@ uartinit(void)
 }
 
 // added static for hw3; not sure
-static void
+void
 uartputc(int c)
 {
   // Replacement code that allows for console editing before enter
   // Copied from cgaputc() in console.c
+  /*
   int pos;
 
   // Cursor position: col + 80*row.
@@ -172,21 +183,20 @@ uartputc(int c)
   outb(COM1, 15);
   outb(COM1+1, pos);
   crt[pos] = ' ' | 0x0700;
+  */
 
   /*
   This code writes to the COM1 serial port
     First checks that the serial port is not busy
 
   Removed for some reason ? maybe don't remove ?
-
+*/
   int i;
   if(!uart)
     return;
   for(i = 0; i < 128 && !(inb(COM1+5) & 0x20); i++)
     microdelay(10);
   outb(COM1+0, c);
-  */
-
 }
 
 static int
@@ -213,16 +223,21 @@ either cgaputc() or consoleintr() does the console editing
 void
 uartintr(void)
 {
-  if(DEBUG)
-    printf("%s\n", "uartintr() is being called!");
-  // Additional mirroring code
-  // consoleintr(uartgetc);
+  if(0)
+    cprintf(" %s\n", "(Entering uartintr)");
 
-  // These are the contents of consoleintr;; not sure if need
+  // Additional mirroring code
+  #ifndef HW3
+  consoleintr(uartgetc);
+  #endif
+  // end of mirroring code
+
+  // These are the contents of consoleintr slightly modified
+  #ifdef HW3
   int c, doprocdump = 0;
 
-  acquire(&cons.lock);
-  while((c = getc()) >= 0){
+  acquire(&com1_cons.lock);
+  while((c = uartgetc()) >= 0){
     switch(c){
     case C('P'):  // Process listing.
       // procdump() locks cons.lock indirectly; invoke later
@@ -232,20 +247,20 @@ uartintr(void)
       while(input.e != input.w &&
             input.buf[(input.e-1) % INPUT_BUF] != '\n'){
         input.e--;
-        consputc(BACKSPACE);
+        uartputc(BACKSPACE);
       }
       break;
     case C('H'): case '\x7f':  // Backspace
       if(input.e != input.w){
         input.e--;
-        consputc(BACKSPACE);
+        uartputc(BACKSPACE);
       }
       break;
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
         input.buf[input.e++ % INPUT_BUF] = c;
-        consputc(c);
+        uartputc(c);
         if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
           input.w = input.e;
           wakeup(&input.r);
@@ -254,8 +269,9 @@ uartintr(void)
       break;
     }
   }
-  release(&cons.lock);
+  release(&com1_cons.lock);
   if(doprocdump) {
     procdump();  // now call procdump() wo. cons.lock held
   }
+  #endif
 }
