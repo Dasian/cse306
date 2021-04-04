@@ -12,15 +12,16 @@
 char *argv[] = { "sh", 0 };
 
 // if defined it will run the HW3 init code
+//  (run 3 shells instead of 1)
 #define HW3_init       1
 
 #define DEV_NAME_SIZE 25
 #define NUM_DEV        3
-#define DEBUG          1
+#define DEBUG          0
 struct dnode_entry {
   char name[25];
-  int major;
-  int minor;
+  short major;
+  short minor;
 };
 
 int
@@ -28,19 +29,17 @@ main(void)
 {
   int pid, wpid;
   struct dnode_entry table[3];
+  int fds[NUM_DEV];
 
   // table init
-  // table[0].name = "console";
-  strcpy(table[0].name, "/console");
+  strcpy(table[0].name, "console");
   table[0].major = CONSOLE;
   table[0].minor = 1;
 
-  // table[1].name = "/com1";
   strcpy(table[1].name, "/com1");
   table[1].major = COM;
   table[1].minor = 1;
 
-  // table[2].name = "/com2";
   strcpy(table[2].name, "/com2");
   table[2].major = COM;
   table[2].minor = 2;
@@ -72,22 +71,6 @@ main(void)
         printf(1, "zombie!\n");
     }
   #endif
-
-  /*
-  Then init needs to fork twice, once for the shell to be started on 
-  /console and another time for the shell to be started on /com1. 
-  The proper device node has to be opened and dup() used to set up 
-  stdin, stdout, and stderr each time. You will need to generalize 
-  the code in init to accomplish this. 
-
-  Perhaps the best way to do it 
-  would be to define a table, where each entry gives the name of a 
-  device node together with its major and minor device numbers. 
-  When init starts, it could iterate through this table, ensuring 
-  that each device node exists and starting a shell to run on that 
-  device node. 
-  */
-
   
   // iterate through the table of devices
   #ifdef HW3_init
@@ -101,48 +84,60 @@ main(void)
       fd = open(table[i].name, O_RDWR);
     }
 
-    // will run a shell on EVERY device in the table
-    if(i == 0) {
-      dup(0); // stdout
-      dup(0); // stderr
-    }
-    else {
-      close(0);
-      close(1);
-      //close(2);
-      dup(fd);
-      dup(fd);
-      //dup(fd);
-    }
-    // dup creates a copy of stdin twice ??
-    /*
-    console - stdin=0; stdout=1; stderr=2;
-    com1 - stdin=com1; stdout=com1; stderr=com1;
-    com2 - stdin=com2; stdout=com2; stderr=com2;
-    */
-
-    // an issue here is that nothing gets printed to the screen..
-    printf(1, "init: starting sh\n");
     pid = fork();
-    // maybe dup after forking? will that change things?
+    printf(1, "init: starting sh\n");
+    
+    // branch off child
     if(pid < 0){
       printf(1, "init: fork failed\n");
       exit();
     }
-    if(pid == 0){
+    if(pid == 0){ // create new shell on device
+      close(0);
+      close(1);
+      close(2);
+      dup(fd);
+      dup(fd);
+      dup(fd);
       exec("sh", argv);
       printf(1, "init: exec sh failed\n");
       exit();
     }
+    if(DEBUG)
+      printf(1, "init: %s pid %d\n", table[i].name, pid);
+
+    // tracking vars for shell revival
     pids[i] = pid;
+    int tmp;
+    do {
+      tmp = dup(fd);
+    } while(tmp < 4);
+    fds[i] = tmp;
+    close(fd);
   }
 
   // reviving shells
-  for(i=0;i<NUM_DEV;i++) {
-    // wait() waits until a child of this process ends
-    if((wpid=wait()) >= 0 && wpid != pids[i])
-      printf(1, "zombie!\n");
-    i %= NUM_DEV;
+  for(;;) {
+    wpid = wait();
+    for(i=0;i<NUM_DEV;i++)
+      if(wpid == pids[i]) {
+        if(pid < 0){
+          printf(1, "init: fork failed\n");
+          exit();
+        }
+        if(pid == 0){ 
+          close(0);
+          close(1);
+          close(2);
+          dup(fds[i]);
+          dup(fds[i]);
+          dup(fds[i]);
+          exec("sh", argv);
+          printf(1, "init: exec sh failed\n");
+          exit();
+        }
+        pids[i] = pid;
+      }
   }
   #endif
 }

@@ -15,7 +15,19 @@ struct superblock;
 
 // if defined it will run HW3 edits in console and uart
 #define HW3   1
-// #define HW3_RW 1
+#define HW3_COM2 1
+
+/*
+	HW3 single com1 shell works w/o com2 specified
+	
+	When HW3_COM2 is specified it's a gamble where the output
+	will go
+	- first 2 times it goes to 4445 and every 3rd is 4444??
+		- only on 4445
+	- works normalls on 4444?? 
+	- THIS IS CAUSED BY PUTTING THE DUP STUFF BEFORE FORK
+		- still happens when placed after
+*/
 
 // bio.c
 void            binit(void);
@@ -178,7 +190,7 @@ extern struct spinlock tickslock;
 
 // uart.c
 void            uartinit(void);
-void            uartintr(void);
+void            uartintr(int);
 void            uartputc(int);
 
 // vm.c
