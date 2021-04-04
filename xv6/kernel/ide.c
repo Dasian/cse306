@@ -13,6 +13,7 @@
 #include "fs.h"
 #include "buf.h"
 #include "defs.h"
+#include "hwinit.h"
 
 #define SECTOR_SIZE   512
 #define IDE_BSY       0x80

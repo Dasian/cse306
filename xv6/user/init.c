@@ -8,26 +8,27 @@
 #include "kernel/spinlock.h"
 #include "kernel/sleeplock.h"
 #include "kernel/file.h"
+#include "kernel/hwinit.h"
 
 char *argv[] = { "sh", 0 };
 
 // if defined it will run the HW3 init code
 //  (run 3 shells instead of 1)
-#define HW3_init       1
-
+#ifdef HW3_init
 #define DEV_NAME_SIZE 25
 #define NUM_DEV        3
-#define DEBUG          0
 struct dnode_entry {
   char name[25];
   short major;
   short minor;
 };
+#endif
 
 int
 main(void)
 {
   int pid, wpid;
+  #ifdef HW3_init
   struct dnode_entry table[3];
   int fds[NUM_DEV];
 
@@ -43,14 +44,15 @@ main(void)
   strcpy(table[2].name, "/com2");
   table[2].major = COM;
   table[2].minor = 2;
+  #endif
 
   
   // This should be run in the generalization code
   // stock xv6 creating console device
   #ifndef HW3_init
-  if(open("/console", O_RDWR) < 0){
-    mknod("/console", CONSOLE, 1);
-    open("/console", O_RDWR);
+  if(open("console", O_RDWR) < 0){
+    mknod("console", CONSOLE, 1);
+    open("console", O_RDWR);
   }
   dup(0);  // stdout
   dup(0);  // stderr

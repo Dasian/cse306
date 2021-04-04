@@ -12,6 +12,7 @@
 #include "proc.h"
 #include "x86.h"
 #include "memlayout.h"
+#include "hwinit.h"
 // #include "user/user.h"
 
 // ports

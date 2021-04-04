@@ -14,6 +14,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "hwinit.h"
 
 static void consputc(int);
 
@@ -167,21 +168,17 @@ cgaputc(int c)
 // this is a replacement and copy of uartputc
 #ifdef HW3 
 void consputc_helper(int c) {
-  #ifndef HW3_RW
   int i;
   for(i = 0; i < 128 && !(inb(COM1+5) & 0x20); i++)
     microdelay(10);
   outb(COM1+0, c);
-  #endif
 }
 
 // replacement and copy of uartgetc
 static int consgetc(void) {
-  #ifndef HW3_RW
   if(!(inb(COM1+5) & 0x01))
     return -1;
   return inb(COM1+0);
-  #endif
 }
 #endif
 
