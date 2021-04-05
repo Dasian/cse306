@@ -19,7 +19,7 @@
 #define COM1    0x3f8
 #define COM2    0x2f8
 
-#ifdef HW3
+#if HW3_multiprocessing
 // additional vars copied from console.c
 #define BACKSPACE 0x100
 #define INPUT_BUF 128
@@ -54,7 +54,7 @@ long int com_port; // tells the funcs which port to operate on
   read and write need to distinguish btwn
   com1 and com2 through ip->minor
 */
-#ifdef HW3
+#if HW3_multiprocessing
 int uartwrite(struct inode *ip, char *buf, int n) {
   int i;
 
@@ -62,8 +62,9 @@ int uartwrite(struct inode *ip, char *buf, int n) {
   acquire(&com1_cons.lock);
   for(i = 0; i < n; i++)
     uartputc_driver(buf[i] & 0xff);
-  if(DEBUG)
-    cprintf("uartwrite: minor: %d pid: %d \n", ip->minor, myproc()->pid);
+  #if HW3_DEBUG
+  cprintf("uartwrite: minor: %d pid: %d \n", ip->minor, myproc()->pid);
+  #endif
   release(&com1_cons.lock);
   ilock(ip);
 
@@ -105,8 +106,9 @@ int uartread(struct inode *ip, char *dst, int n) {
     if(c == '\n')
       break;
   }
-  if(DEBUG)
-    cprintf("uartread: minor: %d pid: %d \n", ip->minor, myproc()->pid);
+  #if HW3_DEBUG
+  cprintf("uartread: minor: %d pid: %d \n", ip->minor, myproc()->pid);
+  #endif
   release(&com1_cons.lock);
   ilock(ip);
 
@@ -121,7 +123,7 @@ uartinit(void)
   com_port = COM1; // defaults to com1
 
   // init code modeled after consoleinit() in consol.c
-  #ifdef HW3
+  #if HW3_multiprocessing
   initlock(&com1_cons.lock, "/com1");
 
   devsw[COM].write = uartwrite;
@@ -154,7 +156,7 @@ uartinit(void)
   inb(COM1+0);
   ioapicenable(IRQ_COM1, 0);
 
-  #ifdef HW3_COM2
+  #if HW3_COM2
   outb(COM2+2, 0);
 
   // 9600 baud, 8 data bits, 1 stop bit, parity off.
@@ -191,7 +193,7 @@ void uartputc(int c) {
   outb(com_port+0, c);
 }
 
-#ifdef HW3
+#if HW3_multiprocessing
 void
 uartputc_driver(int c)
 {
@@ -227,21 +229,21 @@ either cgaputc() or consoleintr() does the console editing
 void
 uartintr(int minor)
 {
-  if(DEBUG) {
+  #if HW3_DEBUG
     //acquire(&com1_cons.lock);
     cprintf("%s %d\n", "uartintr ", minor);
     //release(&com1_cons.lock);
-  }
+  #endif
 
 
   // Additional mirroring code
-  #ifndef HW3
+  #if !HW3_multiprocessing
   consoleintr(uartgetc);
   #endif
   // end of mirroring code
 
   // These are the contents of consoleintr slightly modified
-  #ifdef HW3
+  #if HW3_multiprocessing
   int c, doprocdump = 0;
 
   if(minor == 1) {

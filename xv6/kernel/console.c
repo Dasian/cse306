@@ -166,7 +166,7 @@ cgaputc(int c)
 }
 
 // this is a replacement and copy of uartputc
-#ifdef HW3 
+#if HW3_multiprocessing 
 void consputc_helper(int c) {
   int i;
   for(i = 0; i < 128 && !(inb(COM1+5) & 0x20); i++)
@@ -191,14 +191,14 @@ consputc(int c)
       ;
   }
   // beginning of mirroring code; uartputc replaced by helper
-  #ifdef HW3
+  #if HW3_multiprocessing
   if(c == BACKSPACE){
     consputc_helper('\b'); consputc_helper(' '); consputc_helper('\b');
   } else
     consputc_helper(c);
   #endif
 
-  #ifndef HW3
+  #if !HW3_multiprocessing
   if(c == BACKSPACE){
     uartputc('\b'); uartputc(' '); uartputc('\b');
   } else
@@ -222,15 +222,16 @@ void
 consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
-  if(DEBUG)
-    cprintf("(%s)\n", "Entering consoleintr");
+  #if HW3_DEBUG
+  cprintf("(%s)\n", "Entering consoleintr");
+  #endif
   acquire(&cons.lock);
   // c = getc() is the original condition
   while(
-    #ifdef HW3
+    #if HW3_multiprocessing
     (c = consgetc())
     #endif
-    #ifndef HW3
+    #if !HW3_multiprocessing
     (c=getc())
     #endif
      >= 0){
