@@ -1,0 +1,80 @@
+David Espiritu
+
+General Info:
+
+For this homework I added a new file “kernel/hwinit.h” which can 
+conditionalize xv6 to be run with or without specific hw
+modifications. 
+To remove all of the HW3 code, set the HW3 variable to false. To 
+remove multiple shells, set the variable “HW3_init” to false. Each 
+variable has a comment defining what it adds/removes from the code.
+By default, all of the hw3 code is enabled. Since exercise 1 is 
+buggy, hopefully this file makes grading slightly easier.
+
+EX1 - Multiprocessing 
+
+files: kernel/console.c, kernel/uart.c, kernel/init.c,
+	kernel/traps.c, kernel/traps.h, kernel/file.h, kernel/defs.h
+
+For this exercise I was able to remove the mirroring code, 
+implement line editing, create and fork multiple devices, revive 
+killed shells, and generalize the uart driver file. Most of the 
+uart code is copied and modified from the console file. Traps.c 
+was also changed in order to call the uartintr() handler with a 
+specified minor device number. Init.c follows the suggested method 
+of shell execution and after forking, each child process replaced 
+stdin, stdout, and stderr with the corresponding device’s file 
+descriptor. The program runs on a single console however, on 
+multiple consoles, I was unable to route the outputs of each 
+console correctly. While I can connect to a shell on ports 4444 
+and 4445 using the cmd “nc localhost port”. I couldn’t direct the 
+outputs accordingly. Any commands on port 4445 (com2) would be 
+output on the com1 shell 2/3 times and would be output on the com2 
+shell the other 1/3 times. 
+
+The xv6 makefile was edited to include "make qemu-telnet" as a 
+setting. I fixed the fs.img directory and added the -nographics flag
+
+This exercise can be tested through the cmd “make qemu-telnet” and 
+connecting to the server using the commands “nc localhost 4444” 
+and “nc localhost 4445” for com1 and com2 respectively. The HW3 
+macro in hwinit.h is set to true by default for this homework. In 
+order to fall back to “stock” single shell execution, set the 
+HW3_multiprocessing variable to false “hwinit.h”.
+
+EX 2 - CPU scheduling
+
+files: kernel/lapic.c, kernel/trap.c, kernel/proc.c, kernel/proc.h,
+
+First I added the required fields in the proc struct in proc.h.
+Then I initialized those variables in allocproc(). I added the 
+incrementation of ticks in the IRQ_TIMER case in trap.c. Whenever
+the ticks variable is incremented I would call a function in
+proc.c to incremenet cpu_ticks on all running processes. To do 
+operations every second I kept track of the time in trap.c. 
+Whenever there is an interrupt and if a second has passed I go to 
+proc.c and update cpu_util on all processes in the process table. 
+
+I calculated the constant k = SDth_root(1/10), however, I was
+unable to connect the <math.h> header to my proc.c file so I
+defaulted k to 1/2. Also, as a result of not being able to include
+the math library, I needed to manually check the cap of 
+cpu_util to be 100. I also modified cmostime() in lapic.c in
+order to fix incorrect times by creating a new cmostime lock.
+The SCHED_DECAY flag was also appended to the end of Makefile.inc
+
+The per process waiting time followed the same process. The 
+runnable ticks were updated in the same function as the running
+ticks and the avg wait time was updated in the same function as
+the avg cpu utilization. 
+
+When the keys CTRL+P are pressed, cpu_ticks, 
+cpu_util, and cpu_wait are printed with their process.
+
+To test this part I set the variable "HW3_multiprocessing" to false
+in order to only have one shell running.
+
+I tested this part by running timerrate 100 in the console and
+pressing CTRL+P. When this is done, the timerrate process is shown
+to have 100% cpu utilization. When there is nothing running, the
+cpu utilization of init and sh is shown to be 0%.
