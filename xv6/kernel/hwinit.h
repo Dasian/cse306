@@ -19,7 +19,7 @@
 #if HW3
 
 // Controls all code for a given exercise in HW3
-#define HW3_multiprocessing false // This is for exercise 1; multiple shells
+#define HW3_multiprocessing true // This is for exercise 1; multiple shells
 #define HW3_scheduler 		true // This is for exercise 2; cpu scheduling
 
 // Specific sections in exercise 1
@@ -31,7 +31,7 @@
 // Specific sections in exercise 2
 #if HW3_scheduler
 #define HW3_cpu_util true // adds cpu measurements and printout
-#endif // end of HW3_scheduler defintions
+#endif // end of HW3_scheduler definitons
 
 #endif // end of HW3 definitions
 
