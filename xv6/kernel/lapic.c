@@ -9,6 +9,8 @@
 #include "traps.h"
 #include "mmu.h"
 #include "x86.h"
+#include "spinlock.h"
+#include "hwinit.h"
 
 // Local APIC registers, divided by 4 for use as uint[] indices.
 #define ID      (0x0020/4)   // ID
@@ -42,6 +44,7 @@
 #define TDCR    (0x03E0/4)   // Timer Divide Configuration
 
 volatile uint *lapic;  // Initialized in mp.c
+struct spinlock cmostimelock;
 
 //PAGEBREAK!
 static void
@@ -98,6 +101,7 @@ lapicinit(void)
 
   // Enable interrupts on the APIC (but not on the processor).
   lapicw(TPR, 0);
+  initlock(&cmostimelock, "cmostime");
 }
 
 int
@@ -195,6 +199,7 @@ static void fill_rtcdate(struct rtcdate *r)
 // qemu seems to use 24-hour GWT and the values are BCD encoded
 void cmostime(struct rtcdate *r)
 {
+  acquire(&cmostimelock);
   struct rtcdate t1, t2;
   int sb, bcd;
 
@@ -226,6 +231,7 @@ void cmostime(struct rtcdate *r)
 
   *r = t1;
   r->year += 2000;
+  release(&cmostimelock);
 }
 
 /*
@@ -239,6 +245,7 @@ uint tps() {
   struct rtcdate init_time;
   struct rtcdate time;
   cmostime(&init_time);
+  int ticks1, ticks2;
 
   // wait until the next second is reached
   //  so we don't start counting in the middle of a sec
@@ -248,7 +255,7 @@ uint tps() {
 
   // get first sysuptime (number of ticks since start)
   acquire(&tickslock);
-  uint ticks1 = ticks;
+  ticks1 = ticks;
   release(&tickslock);
 
   // wait for a second here
@@ -258,7 +265,7 @@ uint tps() {
 
   // get second sysuptime
   acquire(&tickslock);
-  uint ticks2 = ticks;
+  ticks2 = ticks;
   release(&tickslock);
 
   // subtract both tick times to get num of ticks in 1 sec
@@ -350,7 +357,7 @@ int timerrate(int *hz) {
       lapicw(0x0380/4, countdown); // number is TICW in lapic.c
 
     }
-    if(countdown < 0)
+    if(countdown <= 0)
       countdown = 10000000;
   }
 

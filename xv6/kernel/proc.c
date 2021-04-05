@@ -1,4 +1,5 @@
 #include "types.h"
+#include "hwinit.h" // hw modification 
 #include "defs.h"
 #include "param.h"
 #include "memlayout.h"
@@ -7,6 +8,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "date.h"
+#include <math.h>
 
 struct {
   struct spinlock lock;
@@ -114,6 +116,13 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
+
+  #if HW3_cpu_util // sets default values for tracking 
+  p -> cpu_util = 0;
+  p -> cpu_ticks = 0;
+  p -> cpu_runnable_ticks = 0;
+  p -> cpu_wait = 0;
+  #endif
 
   return p;
 }
@@ -593,9 +602,82 @@ procdump(void)
       for(i=0; i<10 && pc[i] != 0; i++)
         cprintf(" %p", pc[i]);
     }
+    #if HW3_cpu_util
+    cprintf(" cpu_ticks %d", p -> cpu_ticks);
+    cprintf(" cpu_util %d%%", p -> cpu_util);
+    cprintf(" cpu wait %d%%", p -> cpu_wait);
+    #endif
     cprintf("\n");
   }
 }
+
+#if HW3_cpu_util
+void proc_update_ticks() {
+  struct proc* p;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p != 0) { // makes sure the process exists
+      if(p -> state == RUNNING) {
+        p -> cpu_ticks = p -> cpu_ticks + 1;
+      }
+      else if(p -> state == RUNNABLE) {
+        p -> cpu_runnable_ticks += 1;
+      }
+    }
+  }
+  release(&ptable.lock);
+  return;
+}
+
+/*
+  Updates the cpu_util variable for every process in ptable
+  This happens every second and is called from trap.c
+  Locking is also contained within this function
+
+  K should be used to achieve a "time constant" of SCHED_DECAY
+    Seconds. If a process doesn't use any cpu the after SCHED_DECAY
+    Seconds, cpu_util should've decayed to 1/10 of original.
+*/
+void proc_cpu_util() {
+  #ifndef SCHED_DECAY
+  // double k = .5; // incorporate SCHED_DELAY somehow?
+  #endif
+
+  #if 0 // unable to add the <math.h< library
+  double exp = 1/SCHED_DECAY;
+  double k = pow(1/10, exp);
+  #endif
+  
+  double k = .5;
+  struct proc *p;
+
+  acquire(&ptable.lock);
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p != 0) {
+      // cpu utilization %
+      p -> cpu_util *= k;
+      p -> cpu_util += p -> cpu_ticks;
+      if(p -> cpu_util > 100)
+        p -> cpu_util = 100;
+      p -> cpu_ticks = 0;
+      // avg time in runnable state per sec
+      if(p -> cpu_wait == 0) {
+        p -> cpu_wait = p -> cpu_runnable_ticks;
+      }
+      else {
+        p -> cpu_wait += p -> cpu_runnable_ticks;
+        p -> cpu_wait /= 2;
+      }
+      p -> cpu_runnable_ticks = 0;
+    }
+  }
+
+  release(&ptable.lock);
+  return;
+}
+#endif
 
 /* 
   Added for hw1

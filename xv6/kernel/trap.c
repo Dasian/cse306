@@ -1,3 +1,4 @@
+#include "hwinit.h" // hw preprocessors
 #include "types.h"
 #include "defs.h"
 #include "param.h"
@@ -7,12 +8,19 @@
 #include "x86.h"
 #include "traps.h"
 #include "spinlock.h"
+#include "date.h"
 
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+
+#if HW3_cpu_util
+static struct rtcdate time;
+static uint prev_second;
+// struct spinlock datelock;
+#endif
 
 void
 tvinit(void)
@@ -22,6 +30,12 @@ tvinit(void)
   for(i = 0; i < 256; i++)
     SETGATE(idt[i], 0, SEG_KCODE<<3, vectors[i], 0);
   SETGATE(idt[T_SYSCALL], 1, SEG_KCODE<<3, vectors[T_SYSCALL], DPL_USER);
+
+  #if HW3_cpu_util
+  cmostime(&time);
+  prev_second = time.second;
+  // initlock(&datelock, "date");
+  #endif
 
   initlock(&tickslock, "time");
 }
@@ -51,6 +65,9 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
+      #if HW3_cpu_util
+      proc_update_ticks(); // incs p->cpu_ticks on all running procs
+      #endif
       wakeup(&ticks);
       release(&tickslock);
     }
@@ -99,6 +116,18 @@ trap(struct trapframe *tf)
             tf->err, cpuid(), tf->eip, rcr2());
     myproc()->killed = 1;
   }
+
+  #if HW3_cpu_util // updates p -> cpu_util every second
+  // acquire(&datelock);
+  cmostime(&time);
+  // just assures that it's a legal second and no other shenanigans
+  if(time.second != prev_second && time.second < 60 && (time.second - 
+    prev_second <= 1 || (!time.second && prev_second==59))) {
+    prev_second = time.second;
+    proc_cpu_util();
+  }
+  // release(&datelock);
+  #endif
 
   // Force process exit if it has been killed and is in user space.
   // (If it is still executing in the kernel, let it keep running

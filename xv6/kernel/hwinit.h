@@ -1,34 +1,42 @@
 /*
 	This file contains C macros that can be used to change xv6
 		according to the hw specifications
-	Since I can mess up some things in the hw, commenting out
-		a HW defintion (HW3 for example) will run xv6 without
-		any hw3 edits (only run a single shell instead of 3)
+	Since I can mess up some things in the hw, setting a HW 
+		defintion (HW3 for example) to false will run xv6
+		without any hw3 edits. Each exercise and parts within
+		the exercise are also specified.
 */
 
-// general debug statements
-#define DEBUG 0
+#define true 1
+#define false 0
+
+// enables all debug statements
+#define DEBUG false
 
 // This enables all hw3 edits
-#define HW3 
+#define HW3 true
 
-#ifdef HW3
+#if HW3
 
-// Commenting out one macro removes all of an exercise's code
-// #define HW3_multiprocessing // This is for exercise 1; multiple shells
-#define HW3_scheduler 		// This is for exercise 2; cpu scheduling
+// Controls all code for a given exercise in HW3
+#define HW3_multiprocessing false // This is for exercise 1; multiple shells
+#define HW3_scheduler 		true // This is for exercise 2; cpu scheduling
 
-#ifdef HW3_multiprocessing
-
-#define HW3_COM2 1	// adds com2 generalization code to uart.c
-#define HW3_init  1	// multi shell generation in init.c
-
+// Specific sections in exercise 1
+#if HW3_multiprocessing
+#define HW3_COM2 true	// adds com2 generalization code to uart.c
+#define HW3_init true	// multi shell generation in init.c
 #endif // end of HW3_multiprocessing conditionals
 
-#ifdef HW3_scheduler
-
-
-
-#endif // end of HW3_scheduler conditionals
+// Specific sections in exercise 2
+#if HW3_scheduler
+#define HW3_cpu_util true // adds cpu measurements and printout
+#endif // end of HW3_scheduler defintions
 
 #endif // end of HW3 definitions
+
+
+#if DEBUG
+#define HW3_debug false		 // debugging for exercise 1
+#define HW3_debug_sched false // debugging for exercise 2
+#endif // end of debug definitions

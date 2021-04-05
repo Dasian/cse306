@@ -37,6 +37,10 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 // Per-process state
 struct proc {
   uint sz;                     // Size of process memory (bytes)
+  int cpu_ticks;               // Number of ticks while in running state
+  int cpu_util;                // CPU utilization percentage
+  int cpu_runnable_ticks;
+  int cpu_wait;
   pde_t* pgdir;                // Page table
   char *kstack;                // Bottom of kernel stack for this process
   enum procstate state;        // Process state
@@ -50,6 +54,11 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
 };
+
+#if HW3_cpu_util
+void proc_cpu_util();
+void proc_update_ticks();
+#endif
 
 // Process memory is laid out contiguously, low addresses first:
 //   text
