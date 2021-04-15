@@ -14,6 +14,7 @@
 #include "buf.h"
 #include "defs.h"
 #include "hwinit.h"
+#include "file.h"
 
 #define SECTOR_SIZE   512
 #define IDE_BSY       0x80
@@ -29,6 +30,19 @@
 #define DMA 1 // MAYBE MOVE THIS AND LET IT BE CHANGED BY MAKE
 #define CONFIG_ADDR   0xCF8
 #define CONFIG_DATA   0xCFC
+
+#if HW4_ide2
+
+// i/o ports for second ide driver
+#define PORT3         0x170
+#define PORT4         0x376
+// second ide controller registers
+#define BADDR3        0x170
+#define BADDR4        0x376
+
+static int havedisk3;
+
+#endif
 
 // idequeue points to the buf now being read/written to the disk.
 // idequeue->qnext points to the next buf to be processed.
@@ -54,6 +68,20 @@ idewait(int checkerr)
     return -1;
   return 0;
 }
+
+#if HW4_ide2
+static int
+idewait2(int checkerr)
+{
+  int r;
+
+  while(((r = inb(BADDR3 + 7)) & (IDE_BSY|IDE_DRDY)) != IDE_DRDY)
+    ;
+  if(checkerr && (r & (IDE_DF|IDE_ERR)) != 0)
+    return -1;
+  return 0;
+}
+#endif
 
 // basically outb and inb but with 4 bytes instead of one
 void outl(uint port, uint *data) {
@@ -87,6 +115,16 @@ uint pci_read_config(uint bus, uint slot, uint func, uint offset) {
   
   return tmp; 
 }
+
+#if HW4_ddn
+int ideread(struct inode *ip, char *buf, int n) {
+
+}
+
+int idewrite(struct inode *ip, char *buf, int n) {
+
+}
+#endif
 
 /*
   Changes for hw2
@@ -126,6 +164,30 @@ ideinit(void)
 
   // Switch back to disk 0.
   outb(0x1f6, 0xe0 | (0<<4));
+
+  #if HW4_ide2
+
+  ioapicenable(IRQ_IDE2, ncpu - 1);
+  idewait2(0);
+
+  // check if disk 3 is present
+  outb(BADDR3 + 6, 0xe0 | (1<<4));
+  for(i=0; i<1000; i++){
+    if(inb(BADDR3 + 7) != 0){
+      havedisk3 = 1;
+      break;
+    }
+  }
+
+  // Switch back to disk 2
+  outb(BADDR3 + 6, 0xe0 | (0<<4));
+
+  #endif // end of HW4_ide2
+
+  #if HW4_ddn
+  devsw[IDE].write = idewrite;
+  devsw[IDE].read = ideread;
+  #endif
 
   // Runs pci code if flag is set during compilation
   #ifdef DMA 
@@ -222,6 +284,37 @@ idestart(struct buf *b)
   }
 }
 
+#if HW4_ide2
+static void
+idestart2(struct buf *b)
+{
+  if(b == 0)
+    panic("idestart");
+  if(b->blockno >= FSSIZE)
+    panic("incorrect blockno");
+  int sector_per_block =  BSIZE/SECTOR_SIZE;
+  int sector = b->blockno * sector_per_block;
+  int read_cmd = (sector_per_block == 1) ? IDE_CMD_READ :  IDE_CMD_RDMUL;
+  int write_cmd = (sector_per_block == 1) ? IDE_CMD_WRITE : IDE_CMD_WRMUL;
+
+  if (sector_per_block > 7) panic("idestart");
+
+  idewait(0);
+  outb(BADDR4, 0);  // generate interrupt
+  outb(BADDR3 + 2, sector_per_block);  // number of sectors
+  outb(BADDR3 + 3, sector & 0xff);
+  outb(BADDR3 + 4, (sector >> 8) & 0xff);
+  outb(BADDR3 + 5, (sector >> 16) & 0xff);
+  outb(BADDR3 + 6, 0xe0 | ((b->dev&1)<<4) | ((sector>>24)&0x0f));
+  if(b->flags & B_DIRTY){
+    outb(BADDR3 + 7, write_cmd);
+    outsl(BADDR3 + 0, b->data, BSIZE/4);
+  } else {
+    outb(BADDR3 + 7, read_cmd);
+  }
+}
+#endif
+
 // Interrupt handler.
 /*
   HW2 Ex 2
@@ -257,6 +350,38 @@ ideintr(void)
 
   release(&idelock);
 }
+
+#if HW4_ide2
+void
+ideintr2(void)
+{
+  struct buf *b;
+
+  // First queued buffer is the active request.
+  acquire(&idelock);
+
+  if((b = idequeue) == 0){
+    release(&idelock);
+    return;
+  }
+  idequeue = b->qnext;
+
+  // Read data if needed.
+  if(!(b->flags & B_DIRTY) && idewait2(1) >= 0)
+    insl(BADDR3, b->data, BSIZE/4);
+
+  // Wake process waiting for this buf.
+  b->flags |= B_VALID;
+  b->flags &= ~B_DIRTY;
+  wakeup(b);
+
+  // Start disk on next buf in queue.
+  if(idequeue != 0)
+    idestart2(idequeue);
+
+  release(&idelock);
+}
+#endif
 
 //PAGEBREAK!
 // Sync buf with disk.
