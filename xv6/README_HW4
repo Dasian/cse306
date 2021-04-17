@@ -1,0 +1,148 @@
+David Espiritu CSE306 HW4
+
+General Info:
+Each exercise can be toggled on and off by setting the 
+corresponding flag in kernel/hwinit.h. All exercises for
+this homework are set to true by default and the previous
+homework (HW3) is set to false.
+
+Exercise 1: Second IDE controller
+
+files: traps.h, ide.c, trap.c, (defs.h, memide.c ?)
+
+First I added a new flag in traps.h for the second ide driver which
+uses IRQ15. The corresponding switch case in traps.c calls
+ideintr2() which is the same as ideintr() but uses ide2. A similar
+form was followed for idewait() and idestart() where a second
+function was created which is the same as original but uses ide2.
+The second ide was initialized in the original ideinit() function.
+The required arguments to create disk2 and disk3 were also added
+to QEMUOPTS in the makefile as required by the homework document.  
+
+Exercise 2: Disk Device Nodes
+
+files: ide.c, init.c, file.h
+
+First I added the IDE symbol in file.h and set it to 3 to
+to correspond with the ide device number. The disk creation in
+init.c follows a similar structure to creating the console.
+open is called on the name and if it does not exist, it creates a
+node with that name. This is done for all 4 disks.
+
+Exercise 3: "Native" mkfs
+
+
+Exercise 4: mount and unmount
+
+-------Notes--------
+
+*****EXERCISE 1*****
+
+TODO:
+	DOESN'T WORK; IDEINTR2 IS WEIRD ??
+	MEMIDE.C NEEDED TO ADD IDEINTR2 WITH NO CODE
+	IRQ15 IS THE SAME NUM AS BOCHS INTERRUPT??
+	I think i need to block interrupts for the other
+		disk during some ops?
+
+Base address 1 (0x1F0) + 0    = Data register (r/w)
+                         1    = Error register (r/o)
+                         2    = Sector count 0 (r/w)
+                         3    = LBA0 (r/w)
+                         4    = LBA1 (r/w)
+                         5    = LBA2 (r/w)
+                         6    = Drive select (r/w)
+                         7    = Command/status register (r/w)
+
+Base address 2 (0x3F6) + 0    = Alternate status register (r/o)
+                                Control register (w/o)
+
+**interrupts are ENABLED for controller by clearing bit 1 (0x2)
+	interrupts are DISABLED for a controller by setting bit 1 (0x2)
+	The bit is set in base addr2 (or base addr4 for second ide)
+
+Main driver: 
+	i/o ports 0x1F0 - 0x1FF and 0x3F6 - 0x3F7
+	interrupts using IRQ 14
+	base addr 1 - 0x1F0
+	base addr 2 - 0x3F6
+
+Second driver:
+	i/o ports 0x170 - 0x17F and 0x376 - 0x377
+	interrupts using IRQ 15 (need to define in traps.h)
+	base addr 3 - 0x170
+	base addr 4 - 0x376
+
+ADD TO MAKEFILE:
+	QEMUOPTS = -drive
+	file=$(USER)/fs.img,index=1,media=disk,format=raw \
+	  -drive file=xv6.img,index=0,media=disk,format=raw -drive 
+	  file=disk2.img,index=2,format=raw \
+	  -drive file=disk3.img,index=3,format=raw -smp $(CPUS) -m 512 
+	  $(QEMUEXTRA)
+
+Need to create disk2.img, disk3.img by adding args to makefile
+	paralleling xv6.img. That target uses dd to create a file of
+	specified 512 byte blocks
+
+ideinit() follows the same structure as ide 1
+	does an idelock2 need to be created?
+	Since both copies share the same queue, only 1 lock exists.
+
+idewait() was copied into idewait2(); same as ide1 but ide2 now
+
+idestart(buf *b) was copied into idestart2(); same but ide2
+	called by ideintr() and iderw()
+	writes contents of b to BADDR1
+
+ideintr() was copied into ideintr2(); same but ide2
+	checks the queue and runs if it's not empty
+	reads data from buf if needed
+	wakes process waiting for this buf
+	starts disk on next buf in queue
+
+iderw(buf *b)
+	called by bread() and bwrite() in bio.c
+	inserts b into the queue
+	idestart() if idequeue == b // this line concerns me
+	waits for request of b to finish
+	IDK IF THIS ONE NEEDS TO BE CHANGED
+
+*****EXERCISE 2*****
+
+Implement ideread() and idewrite() in ide.c and add the funcs
+	into the devsw array like uart
+	Major dev number is 3
+	Minor dev numbers is [0, 3]
+
+ideread() and idewrite()
+	treat a disk as a sequence of bytes like any other file
+	calculate the disk block addr that corresponds with
+		the curr file offset
+	read that block into memory using bread() from bio.c
+	then either:
+		copy out data from the buffer (ideread)
+		copy data into buffer then call bwrite (idewrite)
+	***Note that ideread/write can require r/w of multiple
+		disk sectors, depending on init file offset and
+		the num of bytes to r/w
+
+Create device nodes in the filesystem in init
+	names /disk0 /disk1 /disk2 /disk3
+
+If previous steps are successful, you can run open() on disk
+	also use read() and lseek()to inspect any disk portion
+
+Create user function df ("disk free")
+	opens /disk1 (this contains the xv6 filesystem)
+	reads the superblock and bitmap
+	scans the inode blocks
+	prints a line to the terminal reporting 
+		curr num of free blocks
+		curr num of free inodes
+
+*****EXERCISE 3*****
+
+*****EXERCISE 4*****
+
+--------End---------
