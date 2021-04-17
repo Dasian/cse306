@@ -134,7 +134,7 @@ int ideread(struct inode *ip, char *buf, int n) {
   // keeps reading blocks until total n bytes are read
   while(num_read < n) {
 
-    // read block into mem using bread()
+    // get block from disk we want to read from
     struct buf* b = bread(ip->dev, blockno);
 
     // copy data from inode into buf
@@ -143,12 +143,13 @@ int ideread(struct inode *ip, char *buf, int n) {
       //  and will only run during the LAST write
       // ex: Bsize=10; n=21; num_read=20;
       //  It will write the last 1 byte into buf
-      memcpy(buf, b->data, n-num_read);
+      memmove(buf, b->data, n-num_read);
+      num_read += n-num_read;
     }
     else {
-      memcpy(buf, b->data, BSIZE);
-      buf += BSIZE; // increment offset we're copying into
-      blockno++;    // increment which block we're reading from
+      memmove(buf, b->data, BSIZE);
+      buf += BSIZE;       // increment offset we're copying into
+      blockno++;          // increment which block we're reading from
       num_read += BSIZE;  // tracks number of bytes read from disk
     }
   }
@@ -177,18 +178,24 @@ int idewrite(struct inode *ip, char *buf, int n) {
     // get block from disk we want to write to (it's locked)
     struct buf* b = bread(ip->dev, blockno);
 
+    // DO UNLOCKING SHENANIGANS NEED TO HAPPEN?
+    // brelse(buf *b) releases a buffer; also does cache queue stuff
+    // or do I use releasesleep(&b->lock); ?
+
     // copy contents of buf into b to be written to disk
     if(n-num_written != 0 && n-num_written < BSIZE) {
       // If n is not a multiple of BSIZE, this will 
       //  write the remainder of the bytes
-      memcpy(b->data, buf, n-num_written);
+      memmove(b->data, buf, n-num_written);
+      num_written += n-num_written;
     }
     else {
-      memcpy(b->data, buf, BSIZE);
-      buf += BSIZE;         // increment offset we're copying into
+      memmove(b->data, buf, BSIZE);
+      buf += BSIZE;         // increment offset we're copying from
       blockno++;            // increment which block we're writing to
       num_written += BSIZE; // tracks number of bytes written to disk
     }
+
     //writes b's contents to disk, b must be locked
     bwrite(b); 
   }
@@ -196,7 +203,7 @@ int idewrite(struct inode *ip, char *buf, int n) {
   ilock(ip); // copied from console.c
   return n;
 }
-#endif
+#endif // end of HW4_ddn (HW4 ex2)
 
 /*
   Changes for hw2

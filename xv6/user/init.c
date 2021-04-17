@@ -12,34 +12,16 @@
 
 char *argv[] = { "sh", 0 };
 
-// if defined it will run the HW3 init code
-//  (run 3 shells instead of 1)
-#if HW3_init
+#if HW4_ddn || HW3_init
 #define DEV_NAME_SIZE 25
-#define NUM_DEV        3
-struct dnode_entry {
-  char name[25];
-  short major;
-  short minor;
-};
-struct dnode_entry table[3];
-
-// sets major and minor device nums in table
-void create_device(int i, short major, short minor) {
-  table[i].major = major;
-  table[i].minor = minor;
-}
-#endif
-
-#if HW4_ddn
-#define NUM_DEV 4
+#define NUM_DEV        7
+#define NUM_CONS       3
 struct dnode_entry {
   char name[25];
   short major;
   short minor;
 };
 struct dnode_entry table[NUM_DEV];
-
 // sets major and minor device nums in table
 void create_device(int i, short major, short minor) {
   table[i].major = major;
@@ -51,41 +33,37 @@ int
 main(void)
 {
   int pid, wpid;
+
   #if HW3_init
   int fds[NUM_DEV];
-
   // table init
   strcpy(table[0].name, "console");
   create_device(0, CONSOLE, 1);
-
   strcpy(table[1].name, "/com1");
   create_device(1, COM, 1);
-
   strcpy(table[2].name, "/com2");
   create_device(2, COM, 2);
   #endif
 
   #if HW4_ddn // add the 4 disk devices
-  strcpy(table[0].name, "/disk0");
-  create_device(0, IDE, 0);
-  strcpy(table[1].name, "/disk1");
-  create_device(1, IDE, 1);
-  strcpy(table[2].name, "/disk2");
-  create_device(2, IDE, 2);
-  strcpy(table[3].name, "/disk3");
-  create_device(3, IDE, 3);
+  strcpy(table[3].name, "/disk0");
+  create_device(3, IDE, 0);
+  strcpy(table[4].name, "/disk1");
+  create_device(4, IDE, 1);
+  strcpy(table[5].name, "/disk2");
+  create_device(5, IDE, 2);
+  strcpy(table[6].name, "/disk3");
+  create_device(6, IDE, 3);
   
-  // creating the disks
-  for(int i=0; i<NUM_DEV; i++) {
+  // creating the disks; must happen before shell inf loops
+  for(int i=3; i<NUM_DEV; i++) {
     // if a device doesn't exist, create it
     if(open(table[i].name, O_RDWR) < 0) {
       mknod(table[i].name, table[i].major, table[i].minor);
-      open(table[i].name, O_RDWR);
     }
   }
-  #endif
+  #endif // hw4 ddn end (hw4 ex2)
 
-  // This should be run in the generalization code
   // stock xv6 creating console device
   #if !HW3_init
   if(open("console", O_RDWR) < 0){
@@ -115,8 +93,8 @@ main(void)
   // iterate through the table of devices
   #if HW3_init
   int fd, i;
-  int pids[NUM_DEV];
-  for(i=0; i<NUM_DEV; i++) {
+  int pids[NUM_CONS];
+  for(i=0; i<NUM_CONS; i++) {
 
     // if a device doesn't exist, create it
     if((fd=open(table[i].name, O_RDWR)) < 0) {
@@ -159,7 +137,7 @@ main(void)
   // reviving shells
   for(;;) {
     wpid = wait();
-    for(i=0;i<NUM_DEV;i++)
+    for(i=0;i<NUM_CONS;i++)
       if(wpid == pids[i]) {
         if(pid < 0){
           printf(1, "init: fork failed\n");

@@ -27,7 +27,12 @@ First I added the IDE symbol in file.h and set it to 3 to
 to correspond with the ide device number. The disk creation in
 init.c follows a similar structure to creating the console.
 open is called on the name and if it does not exist, it creates a
-node with that name. This is done for all 4 disks.
+node with that name. This is done for all 4 disks. For the reading
+and writing functions in ide.c I locked the inodes, got a block
+buffer using bread, and read/wrote from/to the disk depending on
+the function. Since I could only read/write the size of a block at
+a time, this operation was done in a while loop until the required
+n bytes were read/written. 
 
 Exercise 3: "Native" mkfs
 
