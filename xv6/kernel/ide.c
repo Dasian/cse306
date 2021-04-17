@@ -117,7 +117,7 @@ uint pci_read_config(uint bus, uint slot, uint func, uint offset) {
 }
 
 #if HW4_ddn
-// read from inode
+// reads contents of disk inode and places it in buf
 int ideread(struct inode *ip, char *buf, int n) {
 
   int num_read = 0; // keeps track of number of bytes read
@@ -135,18 +135,18 @@ int ideread(struct inode *ip, char *buf, int n) {
   while(num_read < n) {
 
     // read block into mem using bread()
-    struct buf* b = bread(ip->dev, blockno); //bread(dev, uint blockno)
+    struct buf* b = bread(ip->dev, blockno);
 
-    // copy out data from buffer
+    // copy data from inode into buf
     if(n - num_read != 0 && n-num_read < BSIZE) {
       // This should only run if n%BSIZE != 0
       //  and will only run during the LAST write
       // ex: Bsize=10; n=21; num_read=20;
       //  It will write the last 1 byte into buf
-      memcpy(buf, b, n-num_read);
+      memcpy(buf, b->data, n-num_read);
     }
     else {
-      memcpy(buf, b, BSIZE); // possible change n
+      memcpy(buf, b->data, BSIZE);
       buf += BSIZE; // increment offset we're copying into
       blockno++;    // increment which block we're reading from
       num_read += BSIZE;  // tracks number of bytes read from disk
@@ -157,9 +157,8 @@ int ideread(struct inode *ip, char *buf, int n) {
   return n;
 }
 
-// write to inode
+// write contents of buf into the disk inode
 int idewrite(struct inode *ip, char *buf, int n) {
-  // calculate disk block addr that corresponds with curr file offset
 
   int num_written = 0; // keeps track of number of bytes written
 
@@ -167,21 +166,31 @@ int idewrite(struct inode *ip, char *buf, int n) {
 
   iunlock(ip); // copied from console.c
 
+  // calculate disk block addr that corresponds with curr file offset
+  // THIS IS A PLACEDHOLDER; IT DOESN'T WORK, FIGURE OUT SOLUTION
+  uint blockno = ip -> addrs[NDIRECT];
+  // END OF PLACEHOLDER
+
   // keeps reading blocks until total n bytes are read
   while(num_written < n) {
-    // calculate disk block addr that corresponds with curr file offset
-    uint blockno = ip -> addrs[NDIRECT]; // ???
 
-    // read block into mem using bread()
-    struct buf* b = bread(ip->dev, blockno); // locked contents of block
+    // get block from disk we want to write to (it's locked)
+    struct buf* b = bread(ip->dev, blockno);
 
-    // tracks number of bytes read from disk
-    num_written += BSIZE;
-
-    // copy data into buffer
-
-    // call bwrite()
-    bwrite(b); //writes b's contents to disk, must be locked
+    // copy contents of buf into b to be written to disk
+    if(n-num_written != 0 && n-num_written < BSIZE) {
+      // If n is not a multiple of BSIZE, this will 
+      //  write the remainder of the bytes
+      memcpy(b->data, buf, n-num_written);
+    }
+    else {
+      memcpy(b->data, buf, BSIZE);
+      buf += BSIZE;         // increment offset we're copying into
+      blockno++;            // increment which block we're writing to
+      num_written += BSIZE; // tracks number of bytes written to disk
+    }
+    //writes b's contents to disk, b must be locked
+    bwrite(b); 
   }
 
   ilock(ip); // copied from console.c
