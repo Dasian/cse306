@@ -16,6 +16,15 @@ xv6memfs.img: subdirs
 
 $(USER)/fs.img: subdirs
 
+disk2.img: subdirs
+	dd if=/dev/zero of=xv6.img count=10000
+	dd if=$(BOOT)/bootblock of=xv6.img conv=notrunc
+	dd if=$(KERNEL)/kernel of=xv6.img seek=1 conv=notrunc
+disk3.img: subdirs
+	dd if=/dev/zero of=xv6.img count=10000
+	dd if=$(BOOT)/bootblock of=xv6.img conv=notrunc
+	dd if=$(KERNEL)/kernel of=xv6.img seek=1 conv=notrunc
+
 .PHONY: subdirs
 subdirs:
 	cd $(BOOT) && $(MAKE) bootblock
@@ -71,9 +80,8 @@ CPUS := 2
 endif
 QEMUOPTS = -drive file=$(USER)/fs.img,index=1,media=disk,format=raw \
 	-drive file=xv6.img,index=0,media=disk,format=raw \
-	-drive file=disk2.img,index=2,format=raw \
-	-drive file=disk3.img,index=3,format=raw -smp \
-	$(CPUS) -m 512 $(QEMUEXTRA)
+	file=disk2.img,index=2,format=raw \
+	-drive file=disk3.img,index=3,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
 
 qemu: xv6.img $(USER)/fs.img
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)

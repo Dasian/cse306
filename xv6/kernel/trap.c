@@ -83,9 +83,11 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
   #endif // end of HW4_ide2 
+  #if !HW4_ide2
   case T_IRQ0 + IRQ_IDE+1:
     // Bochs generates spurious IDE1 interrupts.
     break;
+  #endif // end of not HW4_ide2
   case T_IRQ0 + IRQ_KBD:
     kbdintr();
     lapiceoi();

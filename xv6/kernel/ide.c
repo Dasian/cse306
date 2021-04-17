@@ -117,12 +117,75 @@ uint pci_read_config(uint bus, uint slot, uint func, uint offset) {
 }
 
 #if HW4_ddn
+// read from inode
 int ideread(struct inode *ip, char *buf, int n) {
 
+  int num_read = 0; // keeps track of number of bytes read
+
+  if(n < 0) return -1;
+
+  iunlock(ip); // copied from console.c
+
+  // calculate disk block addr that corresponds with curr file offset
+  // THIS IS A PLACEDHOLDER; IT DOESN'T WORK, FIGURE OUT SOLUTION
+  uint blockno = ip -> addrs[NDIRECT];
+  // END OF PLACEHOLDER
+
+  // keeps reading blocks until total n bytes are read
+  while(num_read < n) {
+
+    // read block into mem using bread()
+    struct buf* b = bread(ip->dev, blockno); //bread(dev, uint blockno)
+
+    // copy out data from buffer
+    if(n - num_read != 0 && n-num_read < BSIZE) {
+      // This should only run if n%BSIZE != 0
+      //  and will only run during the LAST write
+      // ex: Bsize=10; n=21; num_read=20;
+      //  It will write the last 1 byte into buf
+      memcpy(buf, b, n-num_read);
+    }
+    else {
+      memcpy(buf, b, BSIZE); // possible change n
+      buf += BSIZE; // increment offset we're copying into
+      blockno++;    // increment which block we're reading from
+      num_read += BSIZE;  // tracks number of bytes read from disk
+    }
+  }
+
+  ilock(ip); // copied from console.c
+  return n;
 }
 
+// write to inode
 int idewrite(struct inode *ip, char *buf, int n) {
+  // calculate disk block addr that corresponds with curr file offset
 
+  int num_written = 0; // keeps track of number of bytes written
+
+  if(n < 0) return -1;
+
+  iunlock(ip); // copied from console.c
+
+  // keeps reading blocks until total n bytes are read
+  while(num_written < n) {
+    // calculate disk block addr that corresponds with curr file offset
+    uint blockno = ip -> addrs[NDIRECT]; // ???
+
+    // read block into mem using bread()
+    struct buf* b = bread(ip->dev, blockno); // locked contents of block
+
+    // tracks number of bytes read from disk
+    num_written += BSIZE;
+
+    // copy data into buffer
+
+    // call bwrite()
+    bwrite(b); //writes b's contents to disk, must be locked
+  }
+
+  ilock(ip); // copied from console.c
+  return n;
 }
 #endif
 

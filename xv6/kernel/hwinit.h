@@ -18,7 +18,7 @@
 #define HW4 true
 
 #if HW4
-#define HW4_ide2 true // exercise 1; impelments second ide controller
+#define HW4_ide2 false // exercise 1; impelments second ide controller
 // HW4_ddn can't be true at the same time as HW3 init since they overlap
 #define HW4_ddn true  // exercise 2; implements disk device nodes
 #endif

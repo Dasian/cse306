@@ -14,7 +14,7 @@ char *argv[] = { "sh", 0 };
 
 // if defined it will run the HW3 init code
 //  (run 3 shells instead of 1)
-#ifdef HW3_init
+#if HW3_init
 #define DEV_NAME_SIZE 25
 #define NUM_DEV        3
 struct dnode_entry {
@@ -22,34 +22,72 @@ struct dnode_entry {
   short major;
   short minor;
 };
+struct dnode_entry table[3];
+
+// sets major and minor device nums in table
+void create_device(int i, short major, short minor) {
+  table[i].major = major;
+  table[i].minor = minor;
+}
+#endif
+
+#if HW4_ddn
+#define NUM_DEV 4
+struct dnode_entry {
+  char name[25];
+  short major;
+  short minor;
+};
+struct dnode_entry table[NUM_DEV];
+
+// sets major and minor device nums in table
+void create_device(int i, short major, short minor) {
+  table[i].major = major;
+  table[i].minor = minor;
+}
 #endif
 
 int
 main(void)
 {
   int pid, wpid;
-  #ifdef HW3_init
-  struct dnode_entry table[3];
+  #if HW3_init
   int fds[NUM_DEV];
 
   // table init
   strcpy(table[0].name, "console");
-  table[0].major = CONSOLE;
-  table[0].minor = 1;
+  create_device(0, CONSOLE, 1);
 
   strcpy(table[1].name, "/com1");
-  table[1].major = COM;
-  table[1].minor = 1;
+  create_device(1, COM, 1);
 
   strcpy(table[2].name, "/com2");
-  table[2].major = COM;
-  table[2].minor = 2;
+  create_device(2, COM, 2);
   #endif
 
+  #if HW4_ddn // add the 4 disk devices
+  strcpy(table[0].name, "/disk0");
+  create_device(0, IDE, 0);
+  strcpy(table[1].name, "/disk1");
+  create_device(1, IDE, 1);
+  strcpy(table[2].name, "/disk2");
+  create_device(2, IDE, 2);
+  strcpy(table[3].name, "/disk3");
+  create_device(3, IDE, 3);
   
+  // creating the disks
+  for(int i=0; i<NUM_DEV; i++) {
+    // if a device doesn't exist, create it
+    if(open(table[i].name, O_RDWR) < 0) {
+      mknod(table[i].name, table[i].major, table[i].minor);
+      open(table[i].name, O_RDWR);
+    }
+  }
+  #endif
+
   // This should be run in the generalization code
   // stock xv6 creating console device
-  #ifndef HW3_init
+  #if !HW3_init
   if(open("console", O_RDWR) < 0){
     mknod("console", CONSOLE, 1);
     open("console", O_RDWR);
@@ -75,7 +113,7 @@ main(void)
   #endif
   
   // iterate through the table of devices
-  #ifdef HW3_init
+  #if HW3_init
   int fd, i;
   int pids[NUM_DEV];
   for(i=0; i<NUM_DEV; i++) {
