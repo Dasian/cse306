@@ -771,7 +771,7 @@ int setdate(struct rtcdate *r) {
   return 0;
 }
 
-#if HW4_ddn
+// implemented for HW4_ddn but not used unless the macro is set
 int lseek(int fd, int offset, int origin) {
   // match a fd to a proceess' file
   struct file* f = myproc() -> ofile[fd];
@@ -792,4 +792,3 @@ int lseek(int fd, int offset, int origin) {
   }
   return offset;
 }
-#endif

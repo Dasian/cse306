@@ -22,7 +22,7 @@ to QEMUOPTS in the makefile as required by the homework document.
 Exercise 2: Disk Device Nodes
 
 files: ide.c, init.c, file.h, file.c, defs.h
-	df.c, syscall.h, syscall.c, sysproc.c
+	df.c, syscall.h, syscall.c, sysproc.c, usys.S, proc.c
 
 init:
 First I added the IDE symbol in file.h and set it to 3 to
@@ -48,23 +48,20 @@ df was implemented in its own file in user/df.c. To get the number
 of free blocks and inodes it first opens /disk1, then it reads
 the superblock on that disk and stores it into a variable sb. The
 bitmap is then read from using lseek() and read() and a counter is
-incremented whenever a 0 bit is found. Next all of the inodes 
+incremented whenever a 0 bit is found. Next, all of the inodes 
 are loaded into a temporary dinode variable one at a time
 and a counter is incremented if that inode is free (when the type 
 is 0). lseek was also implemented as a system call. The 
 xv6/Makefile was also edited in order to have df as a user program.
 
 lseek() implementation:
-I can match an inode with the corresponding file in the 
-file table in file.c. With file access I can change the
-offset value. The issue is connecting a file descriptor
-to a file.
-
-TODO:
-	how do I get the proper offset for ideread/write other than
-		using a default?
-	how do i implement lseek() ?
-	how do i abstract df.c using an assumed lseek already?
+lseek was added as syscall 27 and the files that are required to 
+implement a syscall were changed (user.h, syscall.cm syscall.h,
+usys.S, sysproc.c) and the lseek function was implemented in
+proc.c. The whence macros were specified in file.h. The way that
+it works is it takes a file descriptor, goes to the ofile array
+of that process, gets the file at index fd, and it changes that
+file's offset depending on what the whence flag is.
 
 Exercise 3: "Native" mkfs
 

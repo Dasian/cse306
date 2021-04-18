@@ -138,7 +138,9 @@ int main(int argc, char* argv[]) {
 	#if HW4_debug
 	printf(1, "Closing fd and exiting\n");
 	#endif
-	// close(fd);
+
+	close(fd);
 	exit();
+	return 0;
 	#endif
 }

@@ -11,7 +11,7 @@
 #define false 0
 
 // enables all debug statements
-#define DEBUG false
+#define DEBUG true
 
 // This enables all hw3 edits
 #define HW3 false
@@ -40,4 +40,5 @@
 #if DEBUG
 #define HW3_debug false		 // debugging for exercise 1
 #define HW3_debug_sched false // debugging for exercise 2
+#define HW4_debug true
 #endif // end of debug definitions
