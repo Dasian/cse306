@@ -9,6 +9,7 @@
 #include "spinlock.h"
 #include "sleeplock.h"
 #include "file.h"
+#include "hwinit.h"
 
 struct devsw devsw[NDEV];
 struct {
@@ -155,3 +156,22 @@ filewrite(struct file *f, char *addr, int n)
   panic("filewrite");
 }
 
+#if HW4_ddn
+/*
+  Helper function for ideread and idewrite
+  Gets the file offset for the corresponding inode
+  returns off on success and -1 otherwise
+*/
+int get_offset(struct inode *ip) {
+  acquire(&ftable.lock);
+  for(int i=0; i<NFILE; i++) {
+    if(ftable.file[i].ip -> inum == ip -> inum) {
+      int off = ftable.file[i].off;
+      release(&ftable.lock);
+      return off;
+    }
+  }
+  release(&ftable.lock)
+  return -1;
+}
+#endif

@@ -117,15 +117,6 @@ uint pci_read_config(uint bus, uint slot, uint func, uint offset) {
 }
 
 #if HW4_ddn
-/*
-  Helper function for ideread and idewrite
-    gets the file offset for the corresponding inode
-*/
-int get_offset(struct inode *ip) {
-
-  return -1;
-}
-
 // reads contents of disk inode and places it in buf
 int ideread(struct inode *ip, char *buf, int n) {
 
@@ -136,11 +127,6 @@ int ideread(struct inode *ip, char *buf, int n) {
   iunlock(ip); // copied from console.c
 
   // calculate disk block addr that corresponds with curr file offset
-  /*
-    since we're given an inode and we need the offset can't we
-    just scan the ftable, find the file that corresponds with
-    the inode, and use that offset in some way?
-  */
   int offset = get_offset(ip); // to be found from the ftable
   uint blockno = offset / BSIZE;
   offset = offset % BSIZE;
