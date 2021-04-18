@@ -21,7 +21,8 @@ to QEMUOPTS in the makefile as required by the homework document.
 
 Exercise 2: Disk Device Nodes
 
-files: ide.c, init.c, file.h
+files: ide.c, init.c, file.h. 
+	df.c, syscall.h, syscall.c, sysproc.c
 
 First I added the IDE symbol in file.h and set it to 3 to
 to correspond with the ide device number. The disk creation in
@@ -32,7 +33,14 @@ and writing functions in ide.c I locked the inodes, got a block
 buffer using bread, and read/wrote from/to the disk depending on
 the function. Since I could only read/write the size of a block at
 a time, this operation was done in a while loop until the required
-n bytes were read/written. 
+n bytes were read/written. The offset for read was set to 0 and the
+offset for write was set to the first free block.
+
+TODO:
+	how do I get the proper offset for ideread/write other than
+		using a default?
+	how do i implement lseek() ?
+	how do i abstract df.c using an assumed lseek already?
 
 Exercise 3: "Native" mkfs
 

@@ -128,7 +128,7 @@ int ideread(struct inode *ip, char *buf, int n) {
 
   // calculate disk block addr that corresponds with curr file offset
   // THIS IS A PLACEDHOLDER; IT DOESN'T WORK, FIGURE OUT SOLUTION
-  uint blockno = ip -> addrs[NDIRECT];
+  uint blockno = bmap(ip, 0); // start at first block ?
   // END OF PLACEHOLDER
 
   // keeps reading blocks until total n bytes are read
@@ -169,7 +169,8 @@ int idewrite(struct inode *ip, char *buf, int n) {
 
   // calculate disk block addr that corresponds with curr file offset
   // THIS IS A PLACEDHOLDER; IT DOESN'T WORK, FIGURE OUT SOLUTION
-  uint blockno = ip -> addrs[NDIRECT];
+  int ino = ip->size/BSIZE;
+  uint blockno = bmap(ip, ino+1); // start at end of data?
   // END OF PLACEHOLDER
 
   // keeps reading blocks until total n bytes are read
@@ -177,10 +178,6 @@ int idewrite(struct inode *ip, char *buf, int n) {
 
     // get block from disk we want to write to (it's locked)
     struct buf* b = bread(ip->dev, blockno);
-
-    // DO UNLOCKING SHENANIGANS NEED TO HAPPEN?
-    // brelse(buf *b) releases a buffer; also does cache queue stuff
-    // or do I use releasesleep(&b->lock); ?
 
     // copy contents of buf into b to be written to disk
     if(n-num_written != 0 && n-num_written < BSIZE) {
@@ -196,8 +193,10 @@ int idewrite(struct inode *ip, char *buf, int n) {
       num_written += BSIZE; // tracks number of bytes written to disk
     }
 
-    //writes b's contents to disk, b must be locked
-    bwrite(b); 
+    // writes b's contents to disk, b must be locked
+    bwrite(b);
+    // releases the buffer 
+    brelse(b);
   }
 
   ilock(ip); // copied from console.c

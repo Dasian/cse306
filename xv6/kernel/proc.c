@@ -8,7 +8,6 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "date.h"
-#include <math.h>
 
 struct {
   struct spinlock lock;
