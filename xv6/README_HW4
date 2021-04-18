@@ -36,6 +36,22 @@ a time, this operation was done in a while loop until the required
 n bytes were read/written. The offset for read was set to 0 and the
 offset for write was set to the first free block.
 
+df was implemented in its own file in user/df.c. To get the number
+of free blocks and inodes it first opens /disk1, then it reads
+the superblock on that disk and stores it into a variable sb. The
+bitmap is then read from using lseek() and read() and a counter is
+incremented whenever a 0 is encountered. Next all of the inodes 
+are loaded into a temporary dinode variable and a counter is 
+incremented if that inode is free (when the type is 0). lseek was
+also implemented as a system call. The xv6/Makefile was also 
+edited in order to have df as a user program
+
+lseek() implementation:
+I can match an inode with the corresponding file in the 
+file table in file.c. With file access I can change the
+offset value. The issue is connecting a file descriptor
+to a file.
+
 TODO:
 	how do I get the proper offset for ideread/write other than
 		using a default?

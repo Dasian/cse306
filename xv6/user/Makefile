@@ -25,6 +25,7 @@ UPROGS=\
 	_getdate\
 	_setdate\
 	_timerrate\
+	_df\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

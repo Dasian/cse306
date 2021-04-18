@@ -117,6 +117,15 @@ uint pci_read_config(uint bus, uint slot, uint func, uint offset) {
 }
 
 #if HW4_ddn
+/*
+  Helper function for ideread and idewrite
+    gets the file offset for the corresponding inode
+*/
+int get_offset(struct inode *ip) {
+
+  return -1;
+}
+
 // reads contents of disk inode and places it in buf
 int ideread(struct inode *ip, char *buf, int n) {
 
@@ -127,9 +136,14 @@ int ideread(struct inode *ip, char *buf, int n) {
   iunlock(ip); // copied from console.c
 
   // calculate disk block addr that corresponds with curr file offset
-  // THIS IS A PLACEDHOLDER; IT DOESN'T WORK, FIGURE OUT SOLUTION
-  uint blockno = 0; // start at first block ?
-  // END OF PLACEHOLDER
+  /*
+    since we're given an inode and we need the offset can't we
+    just scan the ftable, find the file that corresponds with
+    the inode, and use that offset in some way?
+  */
+  int offset = get_offset(ip); // to be found from the ftable
+  uint blockno = offset / BSIZE;
+  offset = offset % BSIZE;
 
   // keeps reading blocks until total n bytes are read
   while(num_read < n) {
@@ -138,15 +152,25 @@ int ideread(struct inode *ip, char *buf, int n) {
     struct buf* b = bread(ip->dev, blockno);
 
     // copy data from inode into buf
-    if(n - num_read != 0 && n-num_read < BSIZE) {
-      // This should only run if n%BSIZE != 0
-      //  and will only run during the LAST write
-      // ex: Bsize=10; n=21; num_read=20;
-      //  It will write the last 1 byte into buf
+    if(offset && num_read < BSIZE) {  // first block
+      // this applies reading with offset; only needed once
+      int to_read;
+      if(n+offset < BSIZE) to_read = n;
+      else to_read = BSIZE-offset;
+      memmove(buf, b->data+offset, to_read);
+      buf += to_read;
+      num_read += to_read;
+      blockno++;
+      offset = 0;
+    }
+    else if(n - num_read != 0 && n-num_read < BSIZE) { // last block
+      // this reads extra bytes that go over a block but don't
+      // go to the end of a block
       memmove(buf, b->data, n-num_read);
       num_read += n-num_read;
     }
-    else {
+    else { // middle blocks
+      // this is reading with no offset; the whole block
       memmove(buf, b->data, BSIZE);
       buf += BSIZE;       // increment offset we're copying into
       blockno++;          // increment which block we're reading from
@@ -161,32 +185,42 @@ int ideread(struct inode *ip, char *buf, int n) {
 // write contents of buf into the disk inode
 int idewrite(struct inode *ip, char *buf, int n) {
 
-  int num_written = 0; // keeps track of number of bytes written
-
   if(n < 0) return -1;
 
   iunlock(ip); // copied from console.c
 
   // calculate disk block addr that corresponds with curr file offset
-  // THIS IS A PLACEDHOLDER; IT DOESN'T WORK, FIGURE OUT SOLUTION
-  int ino = ip->size/BSIZE;
-  uint blockno = ino+1; // start at end of data?
-  // END OF PLACEHOLDER
+  int offset = get_offset(ip);
+  uint blockno = offset / BSIZE;
+  int num_written = 0; // keeps track of number of bytes written
+  offset = offset % BSIZE;
 
-  // keeps reading blocks until total n bytes are read
+  // keeps reading blocks until n bytes are written to buf
   while(num_written < n) {
 
     // get block from disk we want to write to (it's locked)
     struct buf* b = bread(ip->dev, blockno);
 
     // copy contents of buf into b to be written to disk
-    if(n-num_written != 0 && n-num_written < BSIZE) {
+    if(offset && num_written < BSIZE) { // first block 
+      // writing with offset; only needed once
+      int num_write;
+      if(n+offset < BSIZE) num_write = n;
+      else num_write = BSIZE-offset;
+      memmove(b->data+offset, buf, num_write);
+      buf += num_write;
+      num_written += num_write;
+      blockno++;
+      offset = 0;
+    }
+    else if(n-num_written != 0 && n-num_written < BSIZE) { // last block
       // If n is not a multiple of BSIZE, this will 
       //  write the remainder of the bytes
       memmove(b->data, buf, n-num_written);
       num_written += n-num_written;
     }
-    else {
+    else { // middle blocks
+      // writes one full block of data
       memmove(b->data, buf, BSIZE);
       buf += BSIZE;         // increment offset we're copying from
       blockno++;            // increment which block we're writing to
