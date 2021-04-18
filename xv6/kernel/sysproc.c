@@ -114,3 +114,14 @@ int sys_timerrate(void) {
     return -1;
   return timerrate(hz);
 }
+
+int sys_lseek(void) {
+  int fd;
+  int offset;
+  int origin;
+
+  if(argint(0, &fd) < 0 || argint(1, &offset) < 0 || argint(2, &origin) < 0)
+    return -1;
+
+  return lseek(fd, offset, origin);
+}

@@ -171,7 +171,7 @@ int get_offset(struct inode *ip) {
       return off;
     }
   }
-  release(&ftable.lock)
+  release(&ftable.lock);
   return -1;
 }
 #endif

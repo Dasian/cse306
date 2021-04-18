@@ -26,6 +26,7 @@ int uptime(void);
 int getdate(struct rtcdate *r);
 int setdate(struct rtcdate *r);
 int timerrate(int *hz);
+int lseek(int, int, int);
 
 // ulib.c
 int stat(char*, struct stat*);

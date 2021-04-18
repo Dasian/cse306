@@ -126,6 +126,7 @@ void            yield(void);
 int 			getdate(struct rtcdate *r);
 int 			setdate(struct rtcdate *r);
 // int 			timerrate(int *hz);
+int 			lseek(int, int, int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

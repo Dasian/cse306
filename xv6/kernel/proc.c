@@ -8,6 +8,9 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "date.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 
 struct {
   struct spinlock lock;
@@ -767,3 +770,26 @@ int setdate(struct rtcdate *r) {
 
   return 0;
 }
+
+#if HW4_ddn
+int lseek(int fd, int offset, int origin) {
+  // match a fd to a proceess' file
+  struct file* f = myproc() -> ofile[fd];
+
+  // set the offset for that file to offset + origin
+  switch(origin) {
+    case SEEK_SET:
+      f -> off = offset;
+    break;
+    case SEEK_CURR:
+      f -> off += offset;
+    break;
+    case SEEK_END:
+      f -> off = f->ip->size + offset;
+    break;
+    default:
+    return -1;
+  }
+  return offset;
+}
+#endif

@@ -106,6 +106,7 @@ extern int sys_uptime(void);
 extern int sys_getdate(void);
 extern int sys_setdate(void);
 extern int sys_timerrate(void);
+extern int sys_lseek(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -131,7 +132,8 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_getdate]   sys_getdate,
 [SYS_setdate]   sys_setdate,
-[SYS_timerrate] sys_timerrate
+[SYS_timerrate] sys_timerrate,
+[SYS_lseek]     sys_lseek
 };
 
 void
