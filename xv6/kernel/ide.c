@@ -128,7 +128,7 @@ int ideread(struct inode *ip, char *buf, int n) {
 
   // calculate disk block addr that corresponds with curr file offset
   // THIS IS A PLACEDHOLDER; IT DOESN'T WORK, FIGURE OUT SOLUTION
-  uint blockno = bmap(ip, 0); // start at first block ?
+  uint blockno = 0; // start at first block ?
   // END OF PLACEHOLDER
 
   // keeps reading blocks until total n bytes are read
@@ -170,7 +170,7 @@ int idewrite(struct inode *ip, char *buf, int n) {
   // calculate disk block addr that corresponds with curr file offset
   // THIS IS A PLACEDHOLDER; IT DOESN'T WORK, FIGURE OUT SOLUTION
   int ino = ip->size/BSIZE;
-  uint blockno = bmap(ip, ino+1); // start at end of data?
+  uint blockno = ino+1; // start at end of data?
   // END OF PLACEHOLDER
 
   // keeps reading blocks until total n bytes are read
