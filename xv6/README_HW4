@@ -21,30 +21,38 @@ to QEMUOPTS in the makefile as required by the homework document.
 
 Exercise 2: Disk Device Nodes
 
-files: ide.c, init.c, file.h. 
+files: ide.c, init.c, file.h, file.c, defs.h
 	df.c, syscall.h, syscall.c, sysproc.c
 
+init:
 First I added the IDE symbol in file.h and set it to 3 to
 to correspond with the ide device number. The disk creation in
 init.c follows a similar structure to creating the console.
 open is called on the name and if it does not exist, it creates a
-node with that name. This is done for all 4 disks. For the reading
-and writing functions in ide.c I locked the inodes, got a block
-buffer using bread, and read/wrote from/to the disk depending on
-the function. Since I could only read/write the size of a block at
-a time, this operation was done in a while loop until the required
-n bytes were read/written. The offset for read was set to 0 and the
-offset for write was set to the first free block.
+node with that name. This is done for all 4 disks. 
 
+Reading and writing:
+For the reading and writing functions in ide.c I locked the 
+inodes, got a block buffer using bread, and read/wrote from/to the 
+disk depending onthe function. Since I could only read/write the 
+size of a block at a time, this operation was done in a while loop 
+until the required n bytes were read/written. The offset for
+read and write were found by creating and calling a function in
+file.c. It would take an inode pointer as a parameter and would
+scan through the ftable. When the corresponding file and inode
+pair was found, the offset found in the file struct would be 
+returned and used.
+
+df:
 df was implemented in its own file in user/df.c. To get the number
 of free blocks and inodes it first opens /disk1, then it reads
 the superblock on that disk and stores it into a variable sb. The
 bitmap is then read from using lseek() and read() and a counter is
-incremented whenever a 0 is encountered. Next all of the inodes 
-are loaded into a temporary dinode variable and a counter is 
-incremented if that inode is free (when the type is 0). lseek was
-also implemented as a system call. The xv6/Makefile was also 
-edited in order to have df as a user program
+incremented whenever a 0 bit is found. Next all of the inodes 
+are loaded into a temporary dinode variable one at a time
+and a counter is incremented if that inode is free (when the type 
+is 0). lseek was also implemented as a system call. The 
+xv6/Makefile was also edited in order to have df as a user program.
 
 lseek() implementation:
 I can match an inode with the corresponding file in the 
