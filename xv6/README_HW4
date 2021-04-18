@@ -8,7 +8,7 @@ homework (HW3) is set to false.
 
 Exercise 1: Second IDE controller
 
-files: traps.h, ide.c, trap.c, (defs.h, memide.c ?)
+files: traps.h, ide.c, trap.c
 
 First I added a new flag in traps.h for the second ide driver which
 uses IRQ15. The corresponding switch case in traps.c calls
@@ -38,10 +38,12 @@ disk depending onthe function. Since I could only read/write the
 size of a block at a time, this operation was done in a while loop 
 until the required n bytes were read/written. The offset for
 read and write were found by creating and calling a function in
-file.c. It would take an inode pointer as a parameter and would
-scan through the ftable. When the corresponding file and inode
-pair was found, the offset found in the file struct would be 
-returned and used.
+file.c get_offset. It would take an inode pointer as a parameter 
+and would scan through the ftable. When the corresponding file and inode pair was found, the offset found in the file struct would be 
+returned and used. It's also important to note that in the 
+while loops in read and write, after a buffer is called using
+bread() and the proper copying/writing was done, it was important
+to use brelse() in order to allow reuse in the cache.
 
 df:
 df was implemented in its own file in user/df.c. To get the number
