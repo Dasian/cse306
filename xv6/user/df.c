@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
 	#endif
 
 	// print free blocks and free inodes
-	printf(1, "Free blocks: %d\b Free Inodes: %d\n", fblocks, fnodes);
+	printf(1, "Free blocks: %d Free Inodes: %d\n", fblocks, fnodes);
 
 	#if HW4_debug
 	printf(1, "Closing fd and exiting\n");
