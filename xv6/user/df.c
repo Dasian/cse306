@@ -43,7 +43,9 @@ int main(int argc, char* argv[]) {
 
 	// count number of free blocks in bitmap
 	char tmpb[BSIZE];
-	for(int i=sb.bmapstart; i<sb.size; i++) {
+	int bmap_size = sb.size - sb.nblocks - sb.ninodes - sb.nlog;
+	int db_checked = 0;
+	for(int i=sb.bmapstart; i<bmap_size; i++) {
 		// get a bitmap block from disk
 		lseek(fd, i*BSIZE, SEEK_SET);
 		read(fd, tmpb, BSIZE);
@@ -55,19 +57,35 @@ int main(int argc, char* argv[]) {
 				if(!byte&1)
 					fblocks++;
 				byte = byte >> 1;
+				db_checked++;
+				if(db_checked==sb.nblocks)
+					break;
 			}
+			if(db_checked==sb.nblocks)
+				break;
 		}
+		if(db_checked==sb.nblocks)
+			break;
 	}
 
 	// scan the inodes to count free ones
 	struct dinode tmpi;
+	int nodes_checked = 0;
 	for(int i=sb.inodestart; i<sb.bmapstart; i++) {
 		// get an dinode block from disk
 		lseek(fd, i*BSIZE, SEEK_SET);
-		read(fd, &tmpi, BSIZE);
-		// this inode is free; increment
-		if(tmpi.type == 0)
-			fnodes++;
+		read(fd, tmpb, BSIZE);
+		for(int j=0; j<IPB; j++) {
+			memmove(&tmpi, tmpb, sizeof(dinode));
+			tmpb += sizeof(dinode);
+			// this inode is free; increment
+			if(tmpi.type == 0)
+				fnodes++;
+			if(++nodes_checked==sb.ninodes)
+				break;
+		}
+		if(nodes_checked==sb.ninodes)
+			break;
 	}
 
 	// print free blocks and free inodes
