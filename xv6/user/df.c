@@ -2,6 +2,7 @@
 #include "kernel/stat.h"
 #include "kernel/fcntl.h"
 #include "kernel/fs.h"
+#include "kernel/hwinit.h"
 #include "user.h"
 
 /*
@@ -24,7 +25,7 @@ int main(int argc, char* argv[]) {
 			SEEK_CURR sets offset to curr_pos + offset
 			SEEK_END sets offset to EOF+offset
 	*/
-
+	#if HW4_ddn
 	// tracks number of free blocks and free inodes
 	int fblocks = 0, fnodes = 0;
 
@@ -40,26 +41,44 @@ int main(int argc, char* argv[]) {
 	lseek(fd, BSIZE, SEEK_SET); // skip over the boot block
 	read(fd, &sb, sizeof(sb));
 
-	// read bitmap
+	// count number of free blocks in bitmap
 	char tmpb[BSIZE];
-	lseek(fd, 0, SEEK_SET);
 	for(int i=sb.bmapstart; i<sb.size; i++) {
-		read(fd, tmpb, BSIZE);
+		// get a bitmap block from disk
 		lseek(fd, i*BSIZE, SEEK_SET);
-		fblocks++;
+		read(fd, tmpb, BSIZE);
+		// check every byte in the block
+		for(int j=0;j<BSIZE;j++) {
+			char byte = tmpb[j];
+			// check if there are 0s in the byte and increment
+			for(int k=0;k<8;k++) {
+				if(!byte&1)
+					fblocks++;
+				byte = byte >> 1;
+			}
+		}
 	}
 
-	// scan the inode blocks; not actually how it works just frame
-	lseek(fd, 0, SEEK_SET);
-	struct inode tmpi;
+	// scan the inodes to count free ones
+	struct dinode tmpi;
 	for(int i=sb.inodestart; i<sb.bmapstart; i++) {
-		read(fd, &tmpi, BSIZE);
+		// get an dinode block from disk
 		lseek(fd, i*BSIZE, SEEK_SET);
-		fnodes++;
+		read(fd, &tmpi, BSIZE);
+		// this inode is free; increment
+		if(tmpi.type == 0)
+			fnodes++;
 	}
 
 	// print free blocks and free inodes
 	printf(1, "Free blocks: %d\b Free Inodes: %d\n", fblocks, fnodes);
 
 	exit();
+	#endif
+
+	// if hw4 is disabled
+	#if !HW4_ddn
+	printf(1, "%s\n", "The df function has been turned off due to a kernel/hwinit.h macro");
+	exit();
+	#endif
 }

@@ -46,6 +46,7 @@ main(void)
   #endif
 
   #if HW4_ddn // add the 4 disk devices
+  int tmp; // used to close a disk if it's open for some reason
   strcpy(table[3].name, "/disk0");
   create_device(3, IDE, 0);
   strcpy(table[4].name, "/disk1");
@@ -58,9 +59,11 @@ main(void)
   // creating the disks; must happen before shell inf loops
   for(int i=3; i<NUM_DEV; i++) {
     // if a device doesn't exist, create it
-    if(open(table[i].name, O_RDWR) < 0) {
+    if((tmp=open(table[i].name, O_RDWR)) < 0) {
       mknod(table[i].name, table[i].major, table[i].minor);
     }
+    else
+      close(tmp);
   }
   #endif // hw4 ddn end (hw4 ex2)
 
