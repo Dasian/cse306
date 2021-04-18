@@ -25,6 +25,7 @@
 #include "sleeplock.h"
 #include "fs.h"
 #include "buf.h"
+#include "hwinit.h"
 
 struct {
   struct spinlock lock;
@@ -62,8 +63,15 @@ static struct buf*
 bget(uint dev, uint blockno)
 {
   struct buf *b;
+  #if HW4_debug_rw
+  cprintf("bio: entering bget\n");
+  #endif
 
   acquire(&bcache.lock);
+
+  #if HW4_debug_rw
+  cprintf("bio: bget starting cache\n");
+  #endif
 
   // Is the block already cached?
   for(b = bcache.head.next; b != &bcache.head; b = b->next){
@@ -74,7 +82,9 @@ bget(uint dev, uint blockno)
       return b;
     }
   }
-
+  #if HW4_debug_rw
+  cprintf("bio: bget finished cache\n");
+  #endif
   // Not cached; recycle an unused buffer.
   // Even if refcnt==0, B_DIRTY indicates a buffer is in use
   // because log.c has modified it but not yet committed it.
@@ -89,6 +99,9 @@ bget(uint dev, uint blockno)
       return b;
     }
   }
+  #if HW4_debug_rw
+  cprintf("bio: bget finished not cache\n");
+  #endif
   panic("bget: no buffers");
 }
 
@@ -97,6 +110,10 @@ struct buf*
 bread(uint dev, uint blockno)
 {
   struct buf *b;
+
+  #if HW4_debug_rw
+  cprintf("bio: entering bread\n");
+  #endif
 
   b = bget(dev, blockno);
   if((b->flags & B_VALID) == 0) {

@@ -141,11 +141,20 @@ int ideread(struct inode *ip, char *buf, int n) {
   // keeps reading blocks until total n bytes are read
   while(num_read < n) {
 
+    #if HW4_debug_rw
+    cprintf("ide: trying to obtain blockno %d from dev %d\n", blockno, ip->dev);
+    #endif
     // get block from disk we want to read from
     struct buf* b = bread(ip->dev, blockno);
+    #if HW4_debug_rw
+    cprintf("ide: obtained blockno %d\n", blockno);
+    #endif
 
     // copy data from inode into buf
     if(offset && num_read < BSIZE) {  // first block
+      #if HW4_debug_rw
+      cprintf("ide: reading first block\n");
+      #endif
       // this applies reading with offset; only needed once
       int to_read;
       if(n+offset < BSIZE) to_read = n;
@@ -169,9 +178,14 @@ int ideread(struct inode *ip, char *buf, int n) {
       blockno++;          // increment which block we're reading from
       num_read += BSIZE;  // tracks number of bytes read from disk
     }
+    brelse(b);
   }
 
   ilock(ip); // copied from console.c
+
+  #if HW4_debug_rw
+  cprintf("ide: exiting ideread\n");
+  #endif
   return n;
 }
 

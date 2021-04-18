@@ -40,17 +40,13 @@ int main(int argc, char* argv[]) {
 	}
 
 	#if HW4_debug_df
-	printf(1, "%s\n", "df: disk1 opened; getting superblock");
+	printf(1, "df: disk1 opened with fd %d; getting superblock\n", fd);
 	#endif
 
 	// get superblock info
 	struct superblock sb;
 	lseek(fd, BSIZE, SEEK_SET); // skip over the boot block
 	read(fd, &sb, sizeof(sb));
-
-	#if HW4_debug_df
-	printf(1, "df: read %d bytes returned %d\n",sizeof(sb),r);
-	#endif
 
 	#if HW4_debug_df
 	printf(1, "%s\n", "df: superblock obtained; starting freeblocks");
@@ -145,6 +141,5 @@ int main(int argc, char* argv[]) {
 
 	close(fd);
 	exit();
-	return 0;
 	#endif
 }
