@@ -18,8 +18,9 @@
 #define HW4 true
 
 #if HW4
-#define HW4_ide2 false // exercise 1; impelments second ide controller
+#define HW4_ide2 true // exercise 1; impelments second ide controller
 #define HW4_ddn true  // exercise 2; implements disk device nodes
+#define HW4_umkfs false	//ex 3: implements user program umkfs
 #endif
 
 #if HW3
@@ -40,5 +41,6 @@
 #if DEBUG
 #define HW3_debug false		 // debugging for exercise 1
 #define HW3_debug_sched false // debugging for exercise 2
-#define HW4_debug true
+#define HW4_debug_df false
+#define HW4_debug_rw true
 #endif // end of debug definitions

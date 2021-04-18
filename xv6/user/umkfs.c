@@ -1,19 +1,25 @@
+#include "kernel/hwinit.h"
+#include "kernel/types.h"
+
+#if HW4_umkfs
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <assert.h>
-
 #define stat xv6_stat  // avoid clash with host struct stat
-#include "kernel/types.h"
-#include "kernel/fs.h"
 #include "kernel/stat.h"
+#include "kernel/fs.h"
 #include "kernel/param.h"
-
 #include "mkfs.h"
+#endif
 
-// convert to intel byte order
+#if !HW4_umkfs
+#include "user.h"
+#endif
+
+#if HW4_umkfs
 ushort
 xshort(ushort x)
 {
@@ -35,10 +41,31 @@ xint(uint x)
   a[3] = x >> 24;
   return y;
 }
+#endif
 
-int
-main(int argc, char *argv[])
-{
+/*
+  Added for hw4 exercise 3
+	copy of mkfs cmd 
+
+	It creates an xv6 filesystem on the disk with empty files
+*/
+
+int main(int argc, char* argv[]) {
+#if !HW4_umkfs
+	printf(1,"%s\n","This function has been turned off due to the HW4_umkfs macro in user/hwinit.h");
+	exit();
+}
+#endif
+
+#if HW4_umkfs
+  if(argc != 2) {
+	printf("Usage: umkfs [disk]\nEx: umkfs /disk3");
+	exit(0);
+  }
+
+  // init that disk as xv6 filesystem
+  // copied from mkfs.c
+  	
   int i, cc, fd;
   uint rootino, inum, off;
   struct dirent de;
@@ -48,17 +75,11 @@ main(int argc, char *argv[])
 
   static_assert(sizeof(int) == 4, "Integers must be 4 bytes!");
 
-  if(argc < 2){
-    fprintf(stderr, "Usage: mkfs fs.img files...\n");
-    exit(1);
-  }
-
-  assert((BSIZE % sizeof(struct dinode)) == 0);
-  assert((BSIZE % sizeof(struct dirent)) == 0);
-
+  // open disk node at argv[1]
   fsfd = open(argv[1], O_RDWR|O_CREAT|O_TRUNC, 0666);
   if(fsfd < 0){
-    perror(argv[1]);
+    // perror(argv[1]);
+    printf(argv[1]);
     exit(1);
   }
 
@@ -103,7 +124,8 @@ main(int argc, char *argv[])
     assert(index(argv[i], '/') == 0);
 
     if((fd = open(argv[i], 0)) < 0){
-      perror(argv[i]);
+      //perror(argv[i]);
+      printf(argv[i]);
       exit(1);
     }
 
@@ -125,9 +147,9 @@ main(int argc, char *argv[])
       iappend(inum, buf, cc);
 
     close(fd);
-  }
+	}
 
-  // fix size of root inode dir
+	// fix size of root inode dir
   rinode(rootino, &din);
   off = xint(din.size);
   off = ((off/BSIZE) + 1) * BSIZE;
@@ -137,17 +159,21 @@ main(int argc, char *argv[])
   balloc(freeblock);
 
   exit(0);
-}
+	exit(0);
+ }
+
 
 void
 wsect(uint sec, void *buf)
 {
   if(lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE){
-    perror("lseek");
+    //perror("lseek");
+    printf("lseek");
     exit(1);
   }
   if(write(fsfd, buf, BSIZE) != BSIZE){
-    perror("write");
+    //perror("write");
+    printf("write");
     exit(1);
   }
 }
@@ -183,11 +209,13 @@ void
 rsect(uint sec, void *buf)
 {
   if(lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE){
-    perror("lseek");
+    //perror("lseek");
+    printf("lseek");
     exit(1);
   }
   if(read(fsfd, buf, BSIZE) != BSIZE){
-    perror("read");
+    //perror("read");
+    printf("read");
     exit(1);
   }
 }
@@ -267,3 +295,4 @@ iappend(uint inum, void *xp, int n)
   din.size = xint(off);
   winode(inum, &din);
 }
+#endif

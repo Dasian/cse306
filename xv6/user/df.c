@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 	// tracks number of free blocks and free inodes
 	int fblocks = 0, fnodes = 0;
 
-	#if HW4_debug
+	#if HW4_debug_df
 	printf(1, "%s\n", "df: starting; opening disk1");
 	#endif
 
@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
 		exit();
 	}
 
-	#if HW4_debug
+	#if HW4_debug_df
 	printf(1, "%s\n", "df: disk1 opened; getting superblock");
 	#endif
 
@@ -48,7 +48,11 @@ int main(int argc, char* argv[]) {
 	lseek(fd, BSIZE, SEEK_SET); // skip over the boot block
 	read(fd, &sb, sizeof(sb));
 
-	#if HW4_debug
+	#if HW4_debug_df
+	printf(1, "df: read %d bytes returned %d\n",sizeof(sb),r);
+	#endif
+
+	#if HW4_debug_df
 	printf(1, "%s\n", "df: superblock obtained; starting freeblocks");
 	printf(1, "superblock data: size %d nblocks %d ninodes %d\n",sb.size, sb.nblocks, sb.ninodes);
 	#endif
@@ -58,16 +62,16 @@ int main(int argc, char* argv[]) {
 	int bmap_size = sb.size - sb.nblocks - sb.bmapstart;
 	int db_checked = 0;
 	for(int i=sb.bmapstart; i<bmap_size+sb.bmapstart; i++) {
-		#if HW4_debug
+		#if HW4_debug_df
 		printf(1, "Checking bmap block %d; starting lseek\n", i-sb.bmapstart+1);
 		#endif
 		// get a bitmap block from disk
 		lseek(fd, i*BSIZE, SEEK_SET);
-		#if HW4_debug
+		#if HW4_debug_df
 		printf(1, "df: lseek successful; starting read\n");
 		#endif
 		read(fd, tmpb, BSIZE);
-		#if HW4_debug
+		#if HW4_debug_df
 		printf(1, "df: read successful; analyzing blocks\n");
 		#endif
 		// check every byte in the block
@@ -89,7 +93,7 @@ int main(int argc, char* argv[]) {
 			break;
 	}
 
-	#if HW4_debug
+	#if HW4_debug_df
 	printf(1, "df: free blocks found: %d; starting inodes\n\n", fblocks);
 	#endif
 
@@ -99,16 +103,16 @@ int main(int argc, char* argv[]) {
 	int tmpb_off = 0;
 	for(int i=sb.inodestart; i<sb.bmapstart; i++) {
 		tmpb_off = 0;
-		#if HW4_debug
+		#if HW4_debug_df
 		printf(1, "Checking inode block %d; starting lseek\n", i-sb.inodestart+1);
 		#endif
 		// get an dinode block from disk
 		lseek(fd, i*BSIZE, SEEK_SET);
-		#if HW4_debug
+		#if HW4_debug_df
 		printf(1, "df: lseek successful; starting read\n");
 		#endif
 		read(fd, tmpb, BSIZE);
-		#if HW4_debug
+		#if HW4_debug_df
 		printf(1, "df: read successful; analyzing blocks\n");
 		#endif
 		for(int j=0; j<IPB; j++) {
@@ -122,20 +126,20 @@ int main(int argc, char* argv[]) {
 		}
 		if(nodes_checked==sb.ninodes)
 			break;
-		#if HW4_debug
+		#if HW4_debug_df
 		printf(1, "df: analysis successful! curr free inodes: %d\n",fnodes);
 		#endif
 	}
 
 	lseek(fd, 0, SEEK_SET);
-	#if HW4_debug
+	#if HW4_debug_df
 	printf(1, "%s\n", "df: free inodes found");
 	#endif
 
 	// print free blocks and free inodes
 	printf(1, "Free blocks: %d Free Inodes: %d\n", fblocks, fnodes);
 
-	#if HW4_debug
+	#if HW4_debug_df
 	printf(1, "Closing fd and exiting\n");
 	#endif
 

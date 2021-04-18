@@ -120,6 +120,10 @@ uint pci_read_config(uint bus, uint slot, uint func, uint offset) {
 // reads contents of disk inode and places it in buf
 int ideread(struct inode *ip, char *buf, int n) {
 
+  #if HW4_debug_rw
+  cprintf("ide: entering read\n");
+  #endif
+
   int num_read = 0; // keeps track of number of bytes read
 
   if(n < 0) return -1;
@@ -128,6 +132,9 @@ int ideread(struct inode *ip, char *buf, int n) {
 
   // calculate disk block addr that corresponds with curr file offset
   int offset = get_offset(ip); // to be found from the ftable
+  #if HW4_debug_rw
+  cprintf("ide: offset is %d\n",offset);
+  #endif
   uint blockno = offset / BSIZE;
   offset = offset % BSIZE;
 
@@ -170,6 +177,10 @@ int ideread(struct inode *ip, char *buf, int n) {
 
 // write contents of buf into the disk inode
 int idewrite(struct inode *ip, char *buf, int n) {
+
+  #if HW4_debug_rw
+  cprintf("ide: entering write\n");
+  #endif
 
   if(n < 0) return -1;
 
