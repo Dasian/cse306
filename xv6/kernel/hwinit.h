@@ -20,7 +20,7 @@
 #if HW4
 #define HW4_ide2 true // exercise 1; impelments second ide controller
 #define HW4_ddn true  // exercise 2; implements disk device nodes
-#define HW4_umkfs false	//ex 3: implements user program umkfs
+#define HW4_umkfs true	//ex 3: implements user program umkfs
 #endif
 
 #if HW3

@@ -88,20 +88,17 @@ addition of more files (as was implemented in mkfs.c) was merely
 removed. All that was left from this point was to just clean up
 the code to work with the rest of the additions to this assignment.
 This should work in theory though exercise 1 has some kinks to work
-out.
+out. The current execution overwrites disk1 which is not good.
+This affects booting up qemu again in the future. In order to
+run it again, the HW4_umkfs macro needs to be set to false.
+This is found in the file kernel/hwinit.h.
+All HW4 macros are set to true by default.
 
 Exercise 4: mount and unmount
 
 -------Notes--------
 
 *****EXERCISE 1*****
-
-TODO:
-	DOESN'T WORK; IDEINTR2 IS WEIRD ??
-	MEMIDE.C NEEDED TO ADD IDEINTR2 WITH NO CODE
-	IRQ15 IS THE SAME NUM AS BOCHS INTERRUPT??
-	I think i need to block interrupts for the other
-		disk during some ops?
 
 Base address 1 (0x1F0) + 0    = Data register (r/w)
                          1    = Error register (r/o)
