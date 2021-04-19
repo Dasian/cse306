@@ -67,6 +67,21 @@ file's offset depending on what the whence flag is.
 
 Exercise 3: "Native" mkfs
 
+files: umkfs.c 
+
+This part was relatively simple, it mostly involved copying the
+existing implementation of the mkfs.c file that comes with xv6
+into umkfs.c and removing the external libraries. Since the
+external libraries could not be used in the user side, code
+present in the mkfs implementation had to be replaced. Some
+functions were handled by the inclusion of the user.h header
+and other functions that do not hold the same name but hold
+similar purpose to the functions in user.h were replaced with
+said functions. Afterwards, to ensure that we are dealing with 
+and empty initiliazed file system, the for loop containing the
+addition of more files (as was implemented in mkfs.c) was merely
+removed. All that was left from this point was to just clean up
+the code to work with the rest of the additions to this assignment.
 
 Exercise 4: mount and unmount
 
