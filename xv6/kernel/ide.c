@@ -375,6 +375,7 @@ ideinit(void)
 static void
 idestart(struct buf *b)
 {
+  #if !HW4_ide2
   if(b == 0)
     panic("idestart");
   if(b->blockno >= FSSIZE)
@@ -399,6 +400,50 @@ idestart(struct buf *b)
   } else {
     outb(0x1f7, read_cmd);
   }
+  #endif
+  #if HW4_ide2
+  if(b == 0)
+    panic("idestart");
+  if(b->blockno >= FSSIZE)
+    panic("incorrect blockno");
+  int sector_per_block =  BSIZE/SECTOR_SIZE;
+  int sector = b->blockno * sector_per_block;
+  int read_cmd = (sector_per_block == 1) ? IDE_CMD_READ :  IDE_CMD_RDMUL;
+  int write_cmd = (sector_per_block == 1) ? IDE_CMD_WRITE : IDE_CMD_WRMUL;
+
+  if (sector_per_block > 7) panic("idestart");
+
+  if(b -> dev == 0 || b -> dev == 1){
+    idewait(0);
+    outb(0x3f6, 0);  // generate interrupt
+    outb(0x1f2, sector_per_block);  // number of sectors
+    outb(0x1f3, sector & 0xff);
+    outb(0x1f4, (sector >> 8) & 0xff);
+    outb(0x1f5, (sector >> 16) & 0xff);
+    outb(0x1f6, 0xe0 | ((b->dev&1)<<4) | ((sector>>24)&0x0f));
+    if(b->flags & B_DIRTY){
+      outb(0x1f7, write_cmd);
+      outsl(0x1f0, b->data, BSIZE/4);
+    } else {
+      outb(0x1f7, read_cmd);
+    }
+  }
+  else if(b -> dev == 2 || b -> dev == 3){
+    idewait(0);
+    outb(BADDR4, 0);  // generate interrupt
+    outb(BADDR3 + 2, sector_per_block);  // number of sectors
+    outb(BADDR3 + 3, sector & 0xff);
+    outb(BADDR3 + 4, (sector >> 8) & 0xff);
+    outb(BADDR3 + 5, (sector >> 16) & 0xff);
+    outb(BADDR3 + 6, 0xe0 | ((b->dev&1)<<4) | ((sector>>24)&0x0f));
+    if(b->flags & B_DIRTY){
+      outb(BADDR3 + 7, write_cmd);
+      outsl(BADDR3 + 0, b->data, BSIZE/4);
+    } else {
+      outb(BADDR3 + 7, read_cmd);
+    }
+  }
+  #endif
 }
 
 #if HW4_ide2
