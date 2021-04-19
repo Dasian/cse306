@@ -39,9 +39,20 @@ xint(uint x)
   return y;
 }
 
+#endif
+
 int
 main(int argc, char *argv[])
 {
+
+  // this cmd only prints this if macro isn't enabled
+  #if !HW4_umkfs
+  printf(1, "umkfs has been disabled due to kernel/hwinit.h macro\n");
+  exit();
+}
+  #endif
+
+#if HW4_umkfs
   int i;
   uint rootino, off;
   struct dirent de;
