@@ -1,4 +1,4 @@
-David Espiritu CSE306 HW4
+David Espiritu and Rocktem Bhowmik CSE306 HW4
 
 General Info:
 Each exercise can be toggled on and off by setting the 
@@ -17,7 +17,12 @@ form was followed for idewait() and idestart() where a second
 function was created which is the same as original but uses ide2.
 The second ide was initialized in the original ideinit() function.
 The required arguments to create disk2 and disk3 were also added
-to QEMUOPTS in the makefile as required by the homework document.  
+to QEMUOPTS in the makefile as required by the homework document.
+After working on exercise 3 we've noticed various issues with the
+disks and realized that exercise 1 still required some work. I 
+attempted to update idestart to resolve this issue but we were not
+able to test to see if it was working around the time this was
+being worked on.  
 
 Exercise 2: Disk Device Nodes
 
@@ -82,6 +87,8 @@ and empty initiliazed file system, the for loop containing the
 addition of more files (as was implemented in mkfs.c) was merely
 removed. All that was left from this point was to just clean up
 the code to work with the rest of the additions to this assignment.
+This should work in theory though exercise 1 has some kinks to work
+out.
 
 Exercise 4: mount and unmount
 
