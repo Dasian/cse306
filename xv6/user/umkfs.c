@@ -83,7 +83,7 @@ main(int argc, char *argv[])
   sb.inodestart = xint(2+nlog);
   sb.bmapstart = xint(2+nlog+ninodeblocks);
 
-  printf(1, "nmeta %d (boot, super, log blocks %u inode blocks %u, bitmap blocks %u) blocks %d total %d\n",
+  printf(1, "nmeta %d (boot, super, log blocks %d inode blocks %d, bitmap blocks %d) blocks %d total %d\n",
          nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
 
   freeblock = nmeta;     // the first free block that we can allocate
