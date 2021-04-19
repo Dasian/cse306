@@ -1,13 +1,9 @@
 #include "kernel/hwinit.h"
 #include "kernel/types.h"
+#include "kernel/fcntl.h"
+#include "user.h"
 
 #if HW4_umkfs
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <assert.h>
 #define stat xv6_stat  // avoid clash with host struct stat
 #include "kernel/stat.h"
 #include "kernel/fs.h"
@@ -20,6 +16,7 @@
 #endif
 
 #if HW4_umkfs
+// convert to intel byte order
 ushort
 xshort(ushort x)
 {
@@ -41,47 +38,27 @@ xint(uint x)
   a[3] = x >> 24;
   return y;
 }
-#endif
 
-/*
-  Added for hw4 exercise 3
-	copy of mkfs cmd 
-
-	It creates an xv6 filesystem on the disk with empty files
-*/
-
-int main(int argc, char* argv[]) {
-#if !HW4_umkfs
-	printf(1,"%s\n","This function has been turned off due to the HW4_umkfs macro in user/hwinit.h");
-	exit();
-}
-#endif
-
-#if HW4_umkfs
-  if(argc != 2) {
-	printf("Usage: umkfs [disk]\nEx: umkfs /disk3");
-	exit(0);
-  }
-
-  // init that disk as xv6 filesystem
-  // copied from mkfs.c
-  	
-  int i, cc, fd;
-  uint rootino, inum, off;
+int
+main(int argc, char *argv[])
+{
+  int i;
+  uint rootino, off;
   struct dirent de;
   char buf[BSIZE];
   struct dinode din;
 
-
-  static_assert(sizeof(int) == 4, "Integers must be 4 bytes!");
-
-  // open disk node at argv[1]
-  fsfd = open(argv[1], O_RDWR|O_CREAT|O_TRUNC, 0666);
-  if(fsfd < 0){
-    // perror(argv[1]);
-    printf(argv[1]);
-    exit(1);
+  if(argc != 2){
+    printf(1, "Usage: umkfs [disk]\nEx: umkfs /disk3\n");
+    exit();
   }
+
+  char *disk = argv[1];
+
+	if((fsfd=open(disk, O_RDWR)) < 0) {
+		printf(1, "Error: disk not present\n");
+		exit();
+	}
 
   // 1 fs block = 1 disk sector
   nmeta = 2 + nlog + ninodeblocks + nbitmap;
@@ -95,7 +72,7 @@ int main(int argc, char* argv[]) {
   sb.inodestart = xint(2+nlog);
   sb.bmapstart = xint(2+nlog+ninodeblocks);
 
-  printf("nmeta %d (boot, super, log blocks %u inode blocks %u, bitmap blocks %u) blocks %d total %d\n",
+  printf(1, "nmeta %d (boot, super, log blocks %u inode blocks %u, bitmap blocks %u) blocks %d total %d\n",
          nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
 
   freeblock = nmeta;     // the first free block that we can allocate
@@ -108,48 +85,18 @@ int main(int argc, char* argv[]) {
   wsect(1, buf);
 
   rootino = ialloc(T_DIR);
-  assert(rootino == ROOTINO);
 
-  bzero(&de, sizeof(de));
+  de = (const struct dirent){0};
   de.inum = xshort(rootino);
   strcpy(de.name, ".");
   iappend(rootino, &de, sizeof(de));
 
-  bzero(&de, sizeof(de));
+  de = (const struct dirent){0};
   de.inum = xshort(rootino);
   strcpy(de.name, "..");
   iappend(rootino, &de, sizeof(de));
 
-  for(i = 2; i < argc; i++){
-    assert(index(argv[i], '/') == 0);
-
-    if((fd = open(argv[i], 0)) < 0){
-      //perror(argv[i]);
-      printf(argv[i]);
-      exit(1);
-    }
-
-    // Skip leading _ in name when writing to file system.
-    // The binaries are named _rm, _cat, etc. to keep the
-    // build operating system from trying to execute them
-    // in place of system binaries like rm and cat.
-    if(argv[i][0] == '_')
-      ++argv[i];
-
-    inum = ialloc(T_FILE);
-
-    bzero(&de, sizeof(de));
-    de.inum = xshort(inum);
-    strncpy(de.name, argv[i], DIRSIZ);
-    iappend(rootino, &de, sizeof(de));
-
-    while((cc = read(fd, buf, sizeof(buf))) > 0)
-      iappend(inum, buf, cc);
-
-    close(fd);
-	}
-
-	// fix size of root inode dir
+  // fix size of root inode dir
   rinode(rootino, &din);
   off = xint(din.size);
   off = ((off/BSIZE) + 1) * BSIZE;
@@ -158,23 +105,19 @@ int main(int argc, char* argv[]) {
 
   balloc(freeblock);
 
-  exit(0);
-	exit(0);
- }
-
+  exit();
+}
 
 void
 wsect(uint sec, void *buf)
 {
   if(lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE){
-    //perror("lseek");
-    printf("lseek");
-    exit(1);
+    printf(1, "lseek error");
+    exit();
   }
   if(write(fsfd, buf, BSIZE) != BSIZE){
-    //perror("write");
-    printf("write");
-    exit(1);
+    printf(1, "write error");
+    exit();
   }
 }
 
@@ -209,14 +152,12 @@ void
 rsect(uint sec, void *buf)
 {
   if(lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE){
-    //perror("lseek");
-    printf("lseek");
-    exit(1);
+    printf(1, "lseek error");
+    exit();
   }
   if(read(fsfd, buf, BSIZE) != BSIZE){
-    //perror("read");
-    printf("read");
-    exit(1);
+    printf(1, "read error");
+    exit();
   }
 }
 
@@ -224,9 +165,8 @@ uint
 ialloc(ushort type)
 {
   uint inum = freeinode++;
-  struct dinode din;
+  struct dinode din = {0};
 
-  bzero(&din, sizeof(din));
   din.type = xshort(type);
   din.nlink = xshort(1);
   din.size = xint(0);
@@ -240,13 +180,12 @@ balloc(int used)
   uchar buf[BSIZE];
   int i;
 
-  printf("balloc: first %d blocks have been allocated\n", used);
-  assert(used < BSIZE*8);
-  bzero(buf, BSIZE);
+  printf(1, "balloc: first %d blocks have been allocated\n", used);
+  memset(buf, 0, BSIZE);
   for(i = 0; i < used; i++){
     buf[i/8] = buf[i/8] | (0x1 << (i%8));
   }
-  printf("balloc: write bitmap block at sector %d\n", sb.bmapstart);
+  printf(1, "balloc: write bitmap block at sector %d\n", sb.bmapstart);
   wsect(sb.bmapstart, buf);
 }
 
@@ -264,10 +203,9 @@ iappend(uint inum, void *xp, int n)
 
   rinode(inum, &din);
   off = xint(din.size);
-  // printf("append inum %d at off %d sz %d\n", inum, off, n);
+  // printf(1,"append inum %d at off %d sz %d\n", inum, off, n);
   while(n > 0){
     fbn = off / BSIZE;
-    assert(fbn < MAXFILE);
     if(fbn < NDIRECT){
       if(xint(din.addrs[fbn]) == 0){
         din.addrs[fbn] = xint(freeblock++);
@@ -286,7 +224,7 @@ iappend(uint inum, void *xp, int n)
     }
     n1 = min(n, (fbn + 1) * BSIZE - off);
     rsect(x, buf);
-    bcopy(p, buf + off - (fbn * BSIZE), n1);
+    memmove(buf + off - (fbn * BSIZE), p, n1);
     wsect(x, buf);
     n -= n1;
     off += n1;
