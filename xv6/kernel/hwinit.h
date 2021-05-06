@@ -13,9 +13,14 @@
 // enables all debug statements
 #define DEBUG false
 
-// This enables all hw3 edits
+// This enables all hw edits
 #define HW3 false
-#define HW4 true
+#define HW4 false
+#define HW5 true
+
+#if HW5
+
+#endif
 
 #if HW4
 #define HW4_ide2 true // exercise 1; impelments second ide controller
@@ -42,5 +47,5 @@
 #define HW3_debug false		 // debugging for exercise 1
 #define HW3_debug_sched false // debugging for exercise 2
 #define HW4_debug_df false	// debugging for e2 df user prog
-#define HW4_debug_rw true	// debug for e2 ideread/write
+#define HW4_debug_rw false	// debug for e2 ideread/write
 #endif // end of debug definitions
