@@ -2,6 +2,10 @@ David Espiritu
 Vicky Chan
 CSE 306 HW5
 
+hw5 and specific sections of hw5 can be turned on/off based on
+the flags located in kernel/hwinit.h. The previous homeworks
+have been turned off by default to prevent unforseen bugs.
+
 Exercise: mmap()
 
 Notes:
@@ -88,7 +92,7 @@ args:
 			Data should be copied between buffer cache and resident
 			pages allocated for the memory-mapped file. 
 
-			DO NOT ATTEMPT TO FIX THE FOLLOWING PROBLEM:
+			DO NOT ATTEMPT TO FIX THE FOLLOWING PROBLEM:	
 			- This creates a certain problem of coherence
 			concerning writes to a file using the write() syscall
 			and writes occuring via mem mapping, as two versions
