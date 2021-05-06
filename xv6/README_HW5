@@ -4,3 +4,145 @@ CSE 306 HW5
 
 Exercise: mmap()
 
+Notes:
+
+The C compiler might delay writes to SHARED memory unless they are
+done through vars declared as volatile. If we aren't seeing any
+updates to shared memory you should consider looking at the 
+assembly code :(
+
+Don't try to implement any page replacement! 
+If a physical page cannot be allocated during page fault handling,
+then just kill the faulting process. 
+A diagnostic message should also be printed the console
+
+TODO:
+	Design a way to keep track of mem-mapped regions and 
+	the associated flags, inodes, etc. in the proc struct
+
+	Implement (or extend) page fault handler so that it 
+	determines whether the faulting addr lies within the region
+	of the virtual addr space mapped via mmap(). If it does, it
+	should take appropriate actions to make the page resident 
+	and satisfy all requirements regarding COW semantics (copy
+	on write) and it should arrange for the writing back of 
+	dirty pages
+
+	Augment the kernel memory allocator so as to maintain a 
+	reference count associated with each physical page. 
+
+	Create a scheme for keeping track of dirty pages associated
+	with memory mapped files and arrange for them to be written
+	back to the underlying file at a suitable time; Certainly by
+	the time the last shared mapping of the file has been deleted
+	using munmap()
+
+	Implement user mode programs to show the functinality.
+	Should show the various types of mappings and behavior of 
+	shared and private mappings.
+
+MMAP() SPECIFICATIONS:
+
+void *mmap(int fd, size_t length, off_t offset, int flags);
+
+map either a file or anon mem into calling process' addr space
+syscall 28
+
+args:
+	fd - file desc of file to be mapped (use if flag is set)
+
+	length - length of mapped region
+	
+	offset - offset of the file to be mapped
+		make sure length + offset <= filesize
+	
+	flags:
+		MAP_PRIVATE (0) 
+			Mapping is private to the calling process
+		
+		MAP_SHARED (1)
+			Physical mem allocated will be shared among all
+			processes that map that "object" (see fork() 
+			discussion)
+
+			Write to the mapped region will be immediately visible
+			to other processess sharing the mapping
+		
+		MAP_FILE (2)
+			Can be OR'ed into flags argument
+			MAY NOT BE USED WITH MAP_SHARED
+
+			IF SPECIFIED:
+			Fd and offset should be used when specified
+			Once a file has been mapped using mmap(), calling
+			close() on the original fd SHOULD NOT have ANY effect
+			on the mapping.
+			Writes to the mapped region should be WRITTEN BACK to
+			the original file, assuming the flags used to open the
+			original file descriptor permitted writing
+			If an attempt is made to write to a mem mapped file 
+			that didn't originally allow writing, the process 
+			attempting this should be killed.
+
+			readi() and writei() should be used to r/w the file.
+			Data should be copied between buffer cache and resident
+			pages allocated for the memory-mapped file. 
+
+			DO NOT ATTEMPT TO FIX THE FOLLOWING PROBLEM:
+			- This creates a certain problem of coherence
+			concerning writes to a file using the write() syscall
+			and writes occuring via mem mapping, as two versions
+			of the file can exist at once: one in the buffer cache
+			and one in a mapped physical page. Real systems 
+			typically avoid this by integrating the buffer cache 
+			and virtual memory system, BUT WE WILL NOT ATTEMPT THIS
+
+
+			IF NOT SPECIFIED:
+			the "object" to be mapped is ANONYMOUS memory.
+			The memory should be zero filled on first access.
+
+return
+	(void *) -1 on failure
+	starting addr of chosen range on success
+
+Fork shenanigans:
+	A child process created by fork() should inherit its parent's 
+	mappings created by mmap(), with the same flags.
+
+	Mappings created with the flag MAP_SHARED should share the same
+	physical memory with the child and parent.
+
+	Mappings created WITHOUT MAP_SHARED should obey Copy-on-write 
+	semantics
+
+Copy-on-write semantics:
+after a fork, the parent and child share any
+resident physical memory pages associated with the mapping but
+write permissions have been disabled in the page tables for 
+each process. A read fault for either the parent or child on
+a non-resident page in the region will result in the newly 
+allocated physical page being shared between the parent and child.
+Upon a WRITE fault caused by an attempt by the parent or child to 
+write a page in the mapped region, a new page should be allocated
+regardless of whether the data was already resident, and the data
+should be copied from an existing resident page into the new page.
+The new page should be installed in the page table for the faulting
+process, WITH WRITE PERMISSION.
+
+
+MUNMAP() SPECIFICATIONS:
+
+int munmap(void* addr);
+
+unmap a region previously mapped using mmap()
+syscall 29
+
+addr arg is an addr previously returned by mmap()
+The entire region associated with that addr should be unmapped
+
+If the region was mapped using MAP_FILE:
+	by the time mmap() returns, any dirty pages will have been
+	written back to the underlying file
+
+returns ???
