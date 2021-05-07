@@ -792,3 +792,59 @@ int lseek(int fd, int offset, int origin) {
   }
   return offset;
 }
+
+// following is implemented for HW5 but not used unless the macro is set
+/*
+  Places a file into main memory OR reserves anonymous memory.
+  The mappings should be stored somewhere.
+*/
+void* mmap(int fd, int length, int offset, int flags) {
+
+  // addr of mapped memory
+  void* addr;
+
+  // checks valid args and makes sure MAP_FILE and MAP_SHARED aren't
+  // both true at the same time (flags == 3)
+  if(length < 0 || fd < 0 || flags < 0 || flags > 2)
+    return (void*) -1;
+
+
+  switch(flags) {
+    case(MAP_FILE): // MAP_PRIVATE with file
+
+    // open the file and user readi/writei to write
+    // that file to some space in memory.
+
+    // Note: writes to this region should be written
+    // back to the original file (if original file allowed writes)
+    // If original file didn't allow writes; kill process that is
+    // attempting to write
+
+    break;
+    case(MAP_SHARED): // MAP_SHARED no file
+
+    // map shared anon memory of size length
+    // mem should be zero'd out
+
+    // Note: writes to this region will be visible to
+    // other processes sharing the mapping
+
+    break;
+    case(MAP_PRIVATE): // MAP_PRIVATE no file 
+
+    // map private anon memory of size length
+    // mem should be zero'd out
+
+    break;
+  }
+
+  return addr;
+}
+
+/*
+
+*/
+int munmap(void* addr) {
+
+  return 0;
+}

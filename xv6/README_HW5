@@ -36,6 +36,10 @@ TODO:
 	Design a way to keep track of mem-mapped regions and 
 	the associated flags, inodes, etc. in the proc struct
 
+	Implement mmap()/munmap() [bottom of kernel/proc.c]
+
+	Modify fork() [in proc.c] so proper pages are inherited. 
+
 	Implement (or extend) page fault handler so that it 
 	determines whether the faulting addr lies within the region
 	of the virtual addr space mapped via mmap(). If it does, it

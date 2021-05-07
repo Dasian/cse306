@@ -60,6 +60,11 @@ void proc_cpu_util();
 void proc_update_ticks();
 #endif
 
+// flags for mmap
+#define MAP_PRIVATE 0
+#define MAP_SHARED 1
+#define MAP_FILE 2
+
 // Process memory is laid out contiguously, low addresses first:
 //   text
 //   original data and bss
