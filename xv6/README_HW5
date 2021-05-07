@@ -8,6 +8,15 @@ have been turned off by default to prevent unforseen bugs.
 
 Exercise: mmap()
 
+Files Changed:
+homework toggle: kernel/hwinit.h
+function implementation: kernel/proc.h kernel/proc.c
+syscall implementation: usys.S kernel/sysproc.c 
+	user/user.h kernel/syscall.h kernel/syscall.c
+
+Since every process will have its own memmory mapped files,
+mmap() was implemented in kernel/proc.c
+
 Notes:
 
 The C compiler might delay writes to SHARED memory unless they are
@@ -21,6 +30,9 @@ then just kill the faulting process.
 A diagnostic message should also be printed the console
 
 TODO:
+
+	Figure out how to implement sys_munmap in kernel/sysproc.c
+
 	Design a way to keep track of mem-mapped regions and 
 	the associated flags, inodes, etc. in the proc struct
 
@@ -48,6 +60,7 @@ TODO:
 MMAP() SPECIFICATIONS:
 
 void *mmap(int fd, size_t length, off_t offset, int flags);
+(parameters were implemented as all type int)
 
 map either a file or anon mem into calling process' addr space
 syscall 28

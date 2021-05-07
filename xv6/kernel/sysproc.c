@@ -125,3 +125,24 @@ int sys_lseek(void) {
 
   return lseek(fd, offset, origin);
 }
+
+int sys_mmap(void) {
+  int fd;
+  int length;
+  int offset;
+  int flags;
+
+  if(argint(0, &fd) < 0 || argint(1, &length) < 0 || argint(2, &offset)
+    || argint(3, &flags))
+    return -1;
+
+  return mmap(fd, length, offset, flags);
+}
+
+int sys_munmap(void) {
+  void* addr;
+
+  // not sure how to implement the check here?
+
+  return munmap(addr);
+}

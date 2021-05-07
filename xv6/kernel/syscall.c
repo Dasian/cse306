@@ -107,6 +107,8 @@ extern int sys_getdate(void);
 extern int sys_setdate(void);
 extern int sys_timerrate(void);
 extern int sys_lseek(void);
+extern int sys_mmap();
+extern int sys_munmap();
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -133,7 +135,9 @@ static int (*syscalls[])(void) = {
 [SYS_getdate]   sys_getdate,
 [SYS_setdate]   sys_setdate,
 [SYS_timerrate] sys_timerrate,
-[SYS_lseek]     sys_lseek
+[SYS_lseek]     sys_lseek,
+[SYS_mmap]      sys_mmap,
+[SYS_munmap]    sys_munmap
 };
 
 void

@@ -26,3 +26,5 @@
 #define SYS_mount 25
 #define SYS_umount 26
 #define SYS_lseek 27
+#define SYS_mmap 28
+#define SYS_munmap 29
