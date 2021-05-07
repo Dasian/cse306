@@ -797,6 +797,12 @@ int lseek(int fd, int offset, int origin) {
 /*
   Places a file into main memory OR reserves anonymous memory.
   The mappings should be stored somewhere.
+
+  Notes:
+    proc structure has pgdir variable (page table)
+    How to allocate a page? allocuvm from vm.c extends all proc mem
+    allocuvm uses kalloc() from kalloc.c!! This allocs a page of
+      physical mem
 */
 void* mmap(int fd, int length, int offset, int flags) {
 
@@ -807,7 +813,6 @@ void* mmap(int fd, int length, int offset, int flags) {
   // both true at the same time (flags == 3)
   if(length < 0 || fd < 0 || flags < 0 || flags > 2)
     return (void*) -1;
-
 
   switch(flags) {
     case(MAP_FILE): // MAP_PRIVATE with file

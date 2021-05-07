@@ -2,6 +2,13 @@ David Espiritu
 Vicky Chan
 CSE 306 HW5
 
+For Vicky:
+	Implementation I believe should be done in proc.c.
+	I recommend looking at vm.c and reading this doc.
+	I implemented the syscall stuff (except for sys_munmap
+	 in sysproc.c if you could look at that <3)
+	I'm currently working on allocating mem in mmap() [proc.c]
+
 hw5 and specific sections of hw5 can be turned on/off based on
 the flags located in kernel/hwinit.h. The previous homeworks
 have been turned off by default to prevent unforseen bugs.
