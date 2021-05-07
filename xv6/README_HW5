@@ -8,6 +8,13 @@ For Vicky:
 	I implemented the syscall stuff (except for sys_munmap
 	 in sysproc.c if you could look at that <3)
 	I'm currently working on allocating mem in mmap() [proc.c]
+	There's really 5 things we need to figure out:
+		1. Allocate mem (mmap/munmap implementation)
+		2. Book keeping page counts and references
+		3. forking shenanigans
+		4. Page fault COW (copy on write) stuff/extending
+			page fault handler
+		5. Implement a user program to show functionality
 
 hw5 and specific sections of hw5 can be turned on/off based on
 the flags located in kernel/hwinit.h. The previous homeworks
