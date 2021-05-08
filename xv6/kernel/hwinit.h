@@ -20,6 +20,8 @@
 
 #if HW5
 
+#define HW5_pf_handler true // implements page fault handler
+
 #endif
 
 #if HW4
