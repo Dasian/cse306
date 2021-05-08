@@ -842,6 +842,21 @@ void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
 // mmap_dealloc() ?
 
 /*
+  Finds an empty entry slot in a processes memory mapped table
+  Takes as input the starting address of the allocated page that
+   houses the table
+  Returns address of free entry or -1 on failure
+*/
+struct mme* find_free_mmt_entry(struct mme* start) {
+  struct mme* entry = start;
+  for(int i=0; i<PGSIZE; i+=sizeof(struct mme)) {
+    if((entry+i) -> prev == 0) {
+      return entry;
+  }
+  return (struct mme*) -1;
+}
+
+/*
   Places a file into main memory OR reserves anonymous memory.
   The mappings are updated in the page table and 
   additional mapping info is stored in the mem mapped table in
@@ -865,7 +880,11 @@ void* mmap(int fd, int length, int offset, int flags) {
   char buf[length];   // does this work lmao
 
   // find a free entry in the mmt block
-  // entry = free_mmt_entry();
+  entry = find_free_mmt_entry(p->mmt_start);
+  if(entry < (struct mme*) -1) {
+    cprintf("mmap table out of memory\n");
+    return (void*) -1;
+  }
 
   // allocate and map memory of size length
   // mem is already zero'd out

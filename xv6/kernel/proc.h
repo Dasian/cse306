@@ -57,7 +57,7 @@ struct proc {
   int cpu_runnable_ticks;
   int cpu_wait;
   pde_t* pgdir;                // Page table
-  struct mme* mmt;             // (HW5) Address of map table start
+  struct mme* mmt_start;       // (HW5) Address of map table start
   struct mme* mme;             // (HW5) First entry in map table
   char *kstack;                // Bottom of kernel stack for this process
   enum procstate state;        // Process state
