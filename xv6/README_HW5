@@ -16,67 +16,6 @@ CSE 306 HW5
 			page fault handler
 		5. Implement a user program to show functionality
 
-hw5 and specific sections of hw5 can be turned on/off based on
-the flags located in kernel/hwinit.h. The previous homeworks
-have been turned off by default to prevent unforseen bugs.
-
--------EXERCISE--------
-
-Files Changed:
-homework toggle: kernel/hwinit.h
-function implementation: kernel/proc.h kernel/proc.c
-syscall implementation: usys.S kernel/sysproc.c 
-	user/user.h kernel/syscall.h kernel/syscall.c
-
-Since every process will have its own memmory mapped files,
-mmap() was implemented in kernel/proc.c. mmap() called
-allocuvm() to allocate page table entries and expand the
-process to prev_size + length. 
-
-
-------NOTES------
-Book keeping:
- - every process has a page table. should another, separate page
-   table be created to keep track of addr, flags, size
-   of mapped memory?
- - how do we turn that into virtual mem and how do we
-   keep track of it in the proc structure, as well as
-   the kernelt memory allocator?
-
-Memory Allocation:
-kalloc() can be used to obtain 1 page of physical mem.
-mappages() creates a PTE for given virtual and physical addr.
-allocuvm() extends mem and adds those pages to the table.
- - uses both kalloc() and mappages();
- - I think this function is the one to be used.
- - Maybe use allocuvm() ONLY IF there are NO OTHER FREE PAGES!
-  munmap can free some space that can later be reused
-  - This function ALREADY 0s OUT the acquired memory.
-copyout() can be used to copy the files to the memory.
- - readi and writei into a private local buffer and then
-   call copyout()?
-- How do we store the corresponding flags, size, and other stuff
-  for any particular address? This is a book keeping problem.
-- CURRENT PROBLEM is obtaining the memory address after 
-  calling allocuvm(). Is this possible??
-
-Forking:
-- check out copyuvm() in vm.c; it copies a parent's page
-   table and gives it to the child
-
-
---------HW SPECIFICATIONS--------
-
-The C compiler might delay writes to SHARED memory unless they are
-done through vars declared as volatile. If we aren't seeing any
-updates to shared memory you should consider looking at the 
-assembly code :(
-
-Don't try to implement any page replacement! 
-If a physical page cannot be allocated during page fault handling,
-then just kill the faulting process. 
-A diagnostic message should also be printed the console
-
 ------TODO------
 
 	Figure out how to implement sys_munmap in kernel/sysproc.c
@@ -111,6 +50,74 @@ A diagnostic message should also be printed the console
 	Implement user mode programs to show the functinality.
 	Should show the various types of mappings and behavior of 
 	shared and private mappings.
+
+------David's Notes------
+Book keeping:
+ - every process has a page table. should another, separate page
+   table be created to keep track of addr, flags, size
+   of mapped memory?
+ - how do we turn that into virtual mem and how do we
+   keep track of it in the proc structure, as well as
+   the kernelt memory allocator?
+
+Memory Allocation:
+kalloc() can be used to obtain 1 page of physical mem.
+mappages() creates a PTE for given virtual and physical addr.
+allocuvm() extends mem and adds those pages to the table.
+ - uses both kalloc() and mappages();
+ - I think this function is the one to be used.
+ - Maybe use allocuvm() ONLY IF there are NO OTHER FREE PAGES!
+  munmap can free some space that can later be reused
+  - This function ALREADY 0s OUT the acquired memory.
+copyout() can be used to copy the files to the memory.
+ - readi and writei into a private local buffer and then
+   call copyout()?
+- How do we store the corresponding flags, size, and other stuff
+  for any particular address? This is a book keeping problem.
+**CURRENT PROBLEM** 
+  Need to check if copyout() copies more than a page. If not,
+  an alternative method needs to be used.
+
+Forking:
+- check out copyuvm() in vm.c; it copies a parent's page
+   table and gives it to the child
+
+
+******************************
+*********************************
+-------General Info-------
+
+hw5 and specific sections of hw5 can be turned on/off based on
+the flags located in kernel/hwinit.h. The previous homeworks
+have been turned off by default to prevent unforseen bugs.
+
+---------EXERCISE README-----------
+
+Files Changed:
+homework toggle: kernel/hwinit.h
+function implementation: kernel/proc.h kernel/proc.c
+syscall implementation: usys.S kernel/sysproc.c 
+	user/user.h kernel/syscall.h kernel/syscall.c
+
+Since every process will have its own memmory mapped files,
+mmap() was implemented in kernel/proc.c. mmap() called
+allocuvm() to allocate page table entries and expand the
+process to prev_size + length. 
+
+*********************************
+*********************************
+
+--------HW SPECIFICATIONS--------
+
+The C compiler might delay writes to SHARED memory unless they are
+done through vars declared as volatile. If we aren't seeing any
+updates to shared memory you should consider looking at the 
+assembly code :(
+
+Don't try to implement any page replacement! 
+If a physical page cannot be allocated during page fault handling,
+then just kill the faulting process. 
+A diagnostic message should also be printed the console
 
 -------MMAP() SPECIFICATIONS-----
 

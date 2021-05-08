@@ -794,6 +794,47 @@ int lseek(int fd, int offset, int origin) {
 }
 
 // following is implemented for HW5 but not used unless the macro is set
+
+/*
+  Helper function for mmap. Allocates newsz-oldsz space in pages.
+  The page table is updated and the starting address of the 
+  memory to be mapped is returned on success, -1 on failure.
+
+  This code is nearly an exact copy of allocuvm() in vm.c
+  with some minor adjustments (return value and setting addr)
+*/
+void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
+  void* addr;
+  char *mem;
+  uint a;
+
+  if(newsz >= KERNBASE)
+    return (void*) -1;
+  if(newsz < oldsz)
+    return (void*) -1;
+
+  a = PGROUNDUP(oldsz);
+  for(; a < newsz; a += PGSIZE){
+    mem = kalloc();
+    // starting addr of allocated memory
+    if(a == PGROUNDUP(olds))
+      addr = mem;
+    if(mem == 0){
+      cprintf("allocuvm out of memory\n");
+      deallocuvm(pgdir, newsz, oldsz);
+      return (void*) -1;
+    }
+    memset(mem, 0, PGSIZE);
+    if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
+      cprintf("allocuvm out of memory (2)\n");
+      deallocuvm(pgdir, newsz, oldsz);
+      kfree(mem);
+      return (void*) -1;
+    }
+  }
+  return addr;
+}
+
 /*
   Places a file into main memory OR reserves anonymous memory.
   The mappings should be stored somewhere.
@@ -818,11 +859,9 @@ void* mmap(int fd, int length, int offset, int flags) {
 
   // allocate and map memory of size length
   // mem is already zero'd out
-  if(!allocuvm(p->pgdir, p->sz, p->sz + length))
+  addr = mmap_alloc(p->pgdir, p->sz, p->sz + length);
+  if(addr < 0)
     return (void*) -1;
-
-  // How to obtain allocated mem addr from table??
-  // addr = ??
 
   switch(flags) {
     case MAP_FILE: // MAP_PRIVATE with file
@@ -839,10 +878,12 @@ void* mmap(int fd, int length, int offset, int flags) {
     // write file into buffer
     if(readi(f->ip, &buf, offset, length) < 0)
       return (void*) -1;
-
     // copy file into memory
     if(copyout(p->pgdir, addr, &buf, length) < 0)
       return (void*) -1;
+
+    // alternatively we can write directly to addr
+    // BUT we need to update the correspond page table entries.
 
     //somehow mark addr as private and a file? (book keeping)
     break;
