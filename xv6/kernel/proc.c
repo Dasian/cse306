@@ -887,7 +887,8 @@ void* mmap(int fd, int length, int offset, int flags) {
     if(copyout(p->pgdir, addr, &buf, length) < 0)
       return (void*) -1;
 
-    //somehow mark addr as private and a file? (book keeping)
+    // somehow mark addr as private and a file? (book keeping)
+    // also keep track if writing is allowed (file permissions)
     break;
     case MAP_SHARED: // MAP_SHARED no file
     // Note: writes to this region will be visible to
@@ -907,9 +908,28 @@ void* mmap(int fd, int length, int offset, int flags) {
 }
 
 /*
+  Unmap a region previously mapped using mmap()
 
+  Returns 0 on success and -1 on failure ig since it didn't specify
 */
 int munmap(void* addr) {
+  struct proc *p = myproc();
+  struct pte_t *pte;
+  int len;
+
+  // update book keeping entries
+  len = 0;
+
+  // update page table entries
+  // shouldn't be dirty but if it is we need to write back
+  // so either do it here or call page handler somehow?
+  for(int i=0; i<len; i+= PGSIZE) {
+    // what does this func even do; go check it out
+    pte = walkpgdir(p->pgdir, addr+size, 1);
+  }
+
+  // zero out memory? security hazard if we don't
+  memset(addr, 0, len);
 
   return 0;
 }

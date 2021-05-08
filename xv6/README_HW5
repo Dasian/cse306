@@ -126,6 +126,30 @@ If a physical page cannot be allocated during page fault handling,
 then just kill the faulting process. 
 A diagnostic message should also be printed the console
 
+Fork shenanigans:
+	A child process created by fork() should inherit its parent's 
+	mappings created by mmap(), with the same flags.
+
+	Mappings created with the flag MAP_SHARED should share the same
+	physical memory with the child and parent.
+
+	Mappings created WITHOUT MAP_SHARED should obey Copy-on-write 
+	semantics
+
+Copy-on-write semantics:
+after a fork, the parent and child share any
+resident physical memory pages associated with the mapping but
+write permissions have been disabled in the page tables for 
+each process. A read fault for either the parent or child on
+a non-resident page in the region will result in the newly 
+allocated physical page being shared between the parent and child.
+Upon a WRITE fault caused by an attempt by the parent or child to 
+write a page in the mapped region, a new page should be allocated
+regardless of whether the data was already resident, and the data
+should be copied from an existing resident page into the new page.
+The new page should be installed in the page table for the faulting
+process, WITH WRITE PERMISSION.
+
 -------MMAP() SPECIFICATIONS-----
 
 void *mmap(int fd, size_t length, off_t offset, int flags);
@@ -191,31 +215,6 @@ args:
 return
 	(void *) -1 on failure
 	starting addr of chosen range on success
-
-Fork shenanigans:
-	A child process created by fork() should inherit its parent's 
-	mappings created by mmap(), with the same flags.
-
-	Mappings created with the flag MAP_SHARED should share the same
-	physical memory with the child and parent.
-
-	Mappings created WITHOUT MAP_SHARED should obey Copy-on-write 
-	semantics
-
-Copy-on-write semantics:
-after a fork, the parent and child share any
-resident physical memory pages associated with the mapping but
-write permissions have been disabled in the page tables for 
-each process. A read fault for either the parent or child on
-a non-resident page in the region will result in the newly 
-allocated physical page being shared between the parent and child.
-Upon a WRITE fault caused by an attempt by the parent or child to 
-write a page in the mapped region, a new page should be allocated
-regardless of whether the data was already resident, and the data
-should be copied from an existing resident page into the new page.
-The new page should be installed in the page table for the faulting
-process, WITH WRITE PERMISSION.
-
 
 ------MUNMAP() SPECIFICATIONS-----
 
