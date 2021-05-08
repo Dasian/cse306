@@ -806,6 +806,7 @@ int lseek(int fd, int offset, int origin) {
   Should this be adjusted to add bookkeeping stuff?
   Only one page could be marked dirty and only
   that page should be written back into memory.
+  The memory permissions should be changed no?
 */
 void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
   void* addr;
@@ -849,10 +850,9 @@ void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
 */
 struct mme* find_free_mmt_entry(struct mme* start) {
   struct mme* entry = start;
-  for(int i=0; i<PGSIZE; i+=sizeof(struct mme)) {
-    if((entry+i) -> prev == 0) {
+  for(int i=0; i<PGSIZE; i+=sizeof(struct mme))
+    if((entry+i) -> prev == 0)
       return entry;
-  }
   return (struct mme*) -1;
 }
 
@@ -935,11 +935,19 @@ void* mmap(int fd, int length, int offset, int flags) {
 */
 int munmap(void* addr) {
   struct proc *p = myproc();
+  struct mme *mme = p -> mme;
   struct pte_t *pte;
   int len;
 
-  // update book keeping entries
-  len = 0;
+  // Remove entry from map table
+  do {
+    mme = mme -> next;
+  } while(mme != 0 && mme -> addr != addr);
+  if(mme == 0)
+    return -1;
+  mme -> prev -> next = mme -> next;
+  mme -> next -> prev = mme -> prev;
+  memset(mme, 0, sizeof(struct mme));
 
   // update page table entries
   // shouldn't be dirty but if it is we need to write back
