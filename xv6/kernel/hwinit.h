@@ -19,9 +19,8 @@
 #define HW5 true
 
 #if HW5
-
 #define HW5_pf_handler true // implements page fault handler
-
+#define HW5_userprog true   // implements user test program
 #endif
 
 #if HW4

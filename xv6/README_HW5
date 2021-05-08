@@ -94,14 +94,14 @@ copyout() can be used to copy the files to the memory.
    call copyout()?
 
 Memory Deallocation (munmap):
-- how
+- how does page table entry updating work?
 - should writing back to file be done here?
   - doesn't solve everything since we aren't guarenteed
     that mapped memory is ALWAYS deallocated
 
 Page Fault Handler:
- - I think this is located in the default case in trap.c
- - 
+- Associated with flag HW5_pf_handler
+- I think this is located in the default case in trap.c
 
 Forking:
 - check out copyuvm() in vm.c; it copies a parent's page
@@ -110,6 +110,12 @@ Forking:
 - Page tables should also be SHARED until either of the process
   writes to it (see Copy on Write)
 - Does the bookkeeping table (mmt) need to be copied?
+
+User Test Program:
+- associated with flag HW5_userprog
+- located in user/maptest.c
+- Show MAP_PRIVATE, MAP_SHARED, and MAP_FILE
+- Also needs to show forking and COW semantics
 
 
 
@@ -126,6 +132,7 @@ have been turned off by default to prevent unforseen bugs.
 Files Changed:
 homework toggle: kernel/hwinit.h
 function implementation: kernel/proc.h kernel/proc.c
+user test program: user/maptest.c user/Makefile
 syscall implementation: usys.S kernel/sysproc.c 
 	user/user.h kernel/syscall.h kernel/syscall.c
 

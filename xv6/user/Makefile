@@ -27,6 +27,7 @@ UPROGS=\
 	_timerrate\
 	_df\
 	_umkfs\
+	_maptest\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
