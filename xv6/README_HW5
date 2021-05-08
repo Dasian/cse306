@@ -68,8 +68,25 @@ Book keeping:
    page. The entries are kept as a double linked list in
    the page. The head of the list is kept in the proc struct. 
    - How do we find free entry space that is closest to the 
-     start of mem table page
+     start of mem table page? 
+     - I'm gonna keep the starting
+       address of the allocated page that keeps the table
+       as a variable in the proc structure. We can use this
+       to iterate through the page and find the first free
+       entry slot (prev link will be set to 0. Whenever an
+       entry is free, the memory is also zero'd out)
    - How does this apply to when entries exceed 1 page? 
+     - Only gonna have one page; similar to how the page table
+       only has one page (I think)
+   - The mem mapped entry (mme) is found in proc.h
+     - It is kept as a doubly linked list in the allocated mem
+     - The head prev link will point to itself
+     - The tail next link will point to 0
+     - A new function: find_free_mmt_entry(void* start)
+       - This will find an empty slot in the mmt to be used
+       - It iterates through the page until it finds a 
+         prev value of 0
+       - When removing a mmt entry, the entry slot will be 0'd 
 
 Memory Allocation (mmap):
 kalloc() can be used to obtain 1 page of physical mem.
