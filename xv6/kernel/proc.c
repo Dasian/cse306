@@ -939,15 +939,31 @@ int munmap(void* addr) {
   struct pte_t *pte;
   int len;
 
-  // Remove entry from map table
+  // Removing entry from map table
   do {
     mme = mme -> next;
   } while(mme != 0 && mme -> addr != addr);
+  // addr doesn't exist in the table
   if(mme == 0)
     return -1;
-  mme -> prev -> next = mme -> next;
-  mme -> next -> prev = mme -> prev;
-  memset(mme, 0, sizeof(struct mme));
+  // Removing mme from linked list
+  if(mme -> prev == mme && mme -> next == 0) { // both head and tail
+    memset(mme, 0, sizeof(struct mme));
+  }
+  else {
+    if(mme -> prev == mme) { // mme is head 
+      mme -> next -> prev = mme -> next;
+    }
+    else if(mme -> next == 0) { // mme is tail
+      mme -> prev -> next = 0;
+    }
+    else { // mme is body
+      mme -> prev -> next = mme -> next;
+      mme -> next -> prev = mme -> prev;
+    }
+    memset(mme, 0, sizeof(struct mme));
+  }
+  
 
   // update page table entries
   // shouldn't be dirty but if it is we need to write back
