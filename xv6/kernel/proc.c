@@ -925,6 +925,20 @@ void* mmap(int fd, int length, int offset, int flags) {
   entry -> MFLAGS = flags; // keeps track of private/shared/file
   entry -> addr = addr;
   entry -> sz = length;
+
+  // add entry to map table list
+  if(p -> mme == -1) { // no nodes in linked list
+    entry -> prev = entry;
+    entry -> next = 0;
+  }
+  else { // entry becomes the new head of the ll
+    entry -> prev = entry;
+    entry -> next = p -> mme;
+    p -> mme -> prev = entry;
+  }
+  // entry is the first node in list always
+  p -> mme = entry;
+
   return addr;
 }
 

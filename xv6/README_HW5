@@ -87,6 +87,10 @@ Book keeping:
        - It iterates through the page until it finds a 
          prev value of 0
        - When removing a mmt entry, the entry slot will be 0'd 
+       - If the linked list is empty, the proc entry 
+         mme is set to -1.
+       - New entries to the linked list become the head to make the
+         operation O(1)
 
 Memory Allocation (mmap):
 kalloc() can be used to obtain 1 page of physical mem.
