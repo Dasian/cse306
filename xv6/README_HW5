@@ -58,12 +58,23 @@ CSE 306 HW5
  Book keeping needs to be figured out 
 
 Book keeping:
- - every process has a page table. should another, separate page
-   table be created to keep track of addr, flags, size
-   of mapped memory?
- - how do we turn that into virtual mem and how do we
-   keep track of it in the proc structure, as well as
-   the kernelt memory allocator?
+ - kernel memory allocator needs to maintain a ref cnt of phy p?
+ - Keep track of dirty pages and when to write them back?
+ - In the proc structure create a table that has the following
+   - starting mem addr
+   - size of mem that is mapped
+   - map flags (shared, private file)
+   - file flags (r only/ w only)
+   - fd, offset, and file length?
+ - Where do we allocate this? it's of variable length so
+   a linked list or something similar to how page tables 
+   are allocated
+   - the table is created with kalloc() and then mapped
+ - Create a proc variable called mmt (memory mapped table)
+   - needs to be allocated in allocproc();
+   - need to figure out how to store variables?
+     - probably create a struct
+   - need to copy this table during fork()
 
 Memory Allocation (mmap):
 kalloc() can be used to obtain 1 page of physical mem.
@@ -82,12 +93,22 @@ copyout() can be used to copy the files to the memory.
 
 Memory Deallocation (munmap):
 - how
+- should writing back to file be done here?
+  - doesn't solve everything since we aren't guarenteed
+    that mapped memory is ALWAYS deallocated
+
+Page Fault Handler:
+ - I think this is located in the default case in trap.c
+ - 
 
 Forking:
 - check out copyuvm() in vm.c; it copies a parent's page
   table and gives it to the child
+  - this is already used in fork()
 - Page tables should also be SHARED until either of the process
   writes to it (see Copy on Write)
+- Does the bookkeeping table (mmt) need to be copied?
+
 
 
 *********************************

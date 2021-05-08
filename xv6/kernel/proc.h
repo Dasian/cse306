@@ -34,6 +34,18 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
+// added for hw5
+// entries in the memory mapped table
+struct mme {
+  void* addr;      // starting virtual addr of mapped memory
+  int sz;          // size of allocated memory
+  int MFLAGS;      // Mapped flags (Shared, private, file)
+  
+  // should only be used if file flag is present in MFLAGS
+  int FFLAGS;      // File flags (r/w)
+  int fd;          // File descriptor
+}
+
 // Per-process state
 struct proc {
   uint sz;                     // Size of process memory (bytes)
@@ -42,6 +54,7 @@ struct proc {
   int cpu_runnable_ticks;
   int cpu_wait;
   pde_t* pgdir;                // Page table
+  mme* mmt;                    // (HW5) memory mapped table
   char *kstack;                // Bottom of kernel stack for this process
   enum procstate state;        // Process state
   int pid;                     // Process ID

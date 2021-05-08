@@ -802,6 +802,10 @@ int lseek(int fd, int offset, int origin) {
 
   This code is nearly an exact copy of allocuvm() in vm.c
   with some minor adjustments (return value and setting addr)
+
+  Should this be adjusted to add bookkeeping stuff?
+  Only one page could be marked dirty and only
+  that page should be written back into memory.
 */
 void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
   void* addr;
