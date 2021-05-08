@@ -126,6 +126,10 @@ found:
   p -> cpu_wait = 0;
   #endif
 
+  // allocate and set values for map pages table
+  p -> mme = -1;              // no entries in table
+  p -> mmt_start = kalloc();  // page where the table is located
+
   return p;
 }
 
