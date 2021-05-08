@@ -22,12 +22,13 @@ CSE 306 HW5
 
 	Design a way to keep track of mem-mapped regions and 
 	the associated flags, inodes, etc. in the proc struct
+	- book keeping
 
 	Augment the kernel memory allocator so as to maintain a 
 	reference count associated with each physical page.
+	- book keeping
 
-	Figure out how to obtain a virtual address from the
-	 page table entry (if this is even possible)
+	Implement book keeping in mmap()
 
 	Implement munmap()
 
@@ -46,6 +47,7 @@ CSE 306 HW5
 	back to the underlying file at a suitable time; Certainly by
 	the time the last shared mapping of the file has been deleted
 	using munmap()
+	- book keeping?
 
 	Implement user mode programs to show the functinality.
 	Should show the various types of mappings and behavior of 
@@ -63,27 +65,32 @@ Book keeping:
    keep track of it in the proc structure, as well as
    the kernelt memory allocator?
 
-Memory Allocation:
+Memory Allocation (mmap):
 kalloc() can be used to obtain 1 page of physical mem.
 mappages() creates a PTE for given virtual and physical addr.
 allocuvm() extends mem and adds those pages to the table.
  - uses both kalloc() and mappages();
  - I think this function is the one to be used.
  - Maybe use allocuvm() ONLY IF there are NO OTHER FREE PAGES!
-  munmap can free some space that can later be reused
-  - This function ALREADY 0s OUT the acquired memory.
+   munmap can free some space that can later be reused
+ - This function ALREADY 0s OUT the acquired memory.
 copyout() can be used to copy the files to the memory.
  - readi and writei into a private local buffer and then
    call copyout()?
 - How do we store the corresponding flags, size, and other stuff
   for any particular address? This is a book keeping problem. 
 
+Memory Deallocation (munmap):
+- how
+
 Forking:
 - check out copyuvm() in vm.c; it copies a parent's page
-   table and gives it to the child
+  table and gives it to the child
+- Page tables should also be SHARED until either of the process
+  writes to it (see Copy on Write)
 
 
-******************************
+*********************************
 *********************************
 -------General Info-------
 
