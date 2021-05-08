@@ -940,20 +940,31 @@ int munmap(void* addr) {
   int len;
 
   // Removing entry from map table
+  // no entries exist in the table
+  if(mme == -1)
+    return -1;
+
+  // find entry in table
   do {
     mme = mme -> next;
   } while(mme != 0 && mme -> addr != addr);
-  // addr doesn't exist in the table
+
+  // entry with corresponding addr doesn't exist in the table
   if(mme == 0)
     return -1;
   len = mme -> sz;
+
   // Removing mme from linked list
   if(mme -> prev == mme && mme -> next == 0) { // both head and tail
     memset(mme, 0, sizeof(struct mme));
+    // no entries exist in the table
+    p -> mme = -1;
   }
   else {
     if(mme -> prev == mme) { // mme is head 
       mme -> next -> prev = mme -> next;
+      // update first entry
+      p -> mme = mme;
     }
     else if(mme -> next == 0) { // mme is tail
       mme -> prev -> next = 0;
