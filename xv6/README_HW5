@@ -2,7 +2,7 @@ David Espiritu
 Vicky Chan
 CSE 306 HW5
 
-For Vicky:
+-----For Vicky-----
 	Implementation I believe should be done in proc.c.
 	I recommend looking at vm.c and reading this doc.
 	I implemented the syscall stuff (except for sys_munmap
@@ -20,7 +20,7 @@ hw5 and specific sections of hw5 can be turned on/off based on
 the flags located in kernel/hwinit.h. The previous homeworks
 have been turned off by default to prevent unforseen bugs.
 
-Exercise: mmap()
+-------EXERCISE--------
 
 Files Changed:
 homework toggle: kernel/hwinit.h
@@ -29,9 +29,43 @@ syscall implementation: usys.S kernel/sysproc.c
 	user/user.h kernel/syscall.h kernel/syscall.c
 
 Since every process will have its own memmory mapped files,
-mmap() was implemented in kernel/proc.c
+mmap() was implemented in kernel/proc.c. mmap() called
+allocuvm() to allocate page table entries and expand the
+process to prev_size + length. 
 
-Notes:
+
+------NOTES------
+Book keeping:
+ - every process has a page table. should another, separate page
+   table be created to keep track of addr, flags, size
+   of mapped memory?
+ - how do we turn that into virtual mem and how do we
+   keep track of it in the proc structure, as well as
+   the kernelt memory allocator?
+
+Memory Allocation:
+kalloc() can be used to obtain 1 page of physical mem.
+mappages() creates a PTE for given virtual and physical addr.
+allocuvm() extends mem and adds those pages to the table.
+ - uses both kalloc() and mappages();
+ - I think this function is the one to be used.
+ - Maybe use allocuvm() ONLY IF there are NO OTHER FREE PAGES!
+  munmap can free some space that can later be reused
+  - This function ALREADY 0s OUT the acquired memory.
+copyout() can be used to copy the files to the memory.
+ - readi and writei into a private local buffer and then
+   call copyout()?
+- How do we store the corresponding flags, size, and other stuff
+  for any particular address? This is a book keeping problem.
+- CURRENT PROBLEM is obtaining the memory address after 
+  calling allocuvm(). Is this possible??
+
+Forking:
+- check out copyuvm() in vm.c; it copies a parent's page
+   table and gives it to the child
+
+
+--------HW SPECIFICATIONS--------
 
 The C compiler might delay writes to SHARED memory unless they are
 done through vars declared as volatile. If we aren't seeing any
@@ -43,14 +77,20 @@ If a physical page cannot be allocated during page fault handling,
 then just kill the faulting process. 
 A diagnostic message should also be printed the console
 
-TODO:
+------TODO------
 
 	Figure out how to implement sys_munmap in kernel/sysproc.c
 
 	Design a way to keep track of mem-mapped regions and 
 	the associated flags, inodes, etc. in the proc struct
 
-	Implement mmap()/munmap() [bottom of kernel/proc.c]
+	Augment the kernel memory allocator so as to maintain a 
+	reference count associated with each physical page.
+
+	Figure out how to obtain a virtual address from the
+	 page table entry (if this is even possible)
+
+	Implement munmap()
 
 	Modify fork() [in proc.c] so proper pages are inherited. 
 
@@ -60,10 +100,7 @@ TODO:
 	should take appropriate actions to make the page resident 
 	and satisfy all requirements regarding COW semantics (copy
 	on write) and it should arrange for the writing back of 
-	dirty pages
-
-	Augment the kernel memory allocator so as to maintain a 
-	reference count associated with each physical page. 
+	dirty pages 
 
 	Create a scheme for keeping track of dirty pages associated
 	with memory mapped files and arrange for them to be written
@@ -75,7 +112,7 @@ TODO:
 	Should show the various types of mappings and behavior of 
 	shared and private mappings.
 
-MMAP() SPECIFICATIONS:
+-------MMAP() SPECIFICATIONS-----
 
 void *mmap(int fd, size_t length, off_t offset, int flags);
 (parameters were implemented as all type int)
@@ -166,7 +203,7 @@ The new page should be installed in the page table for the faulting
 process, WITH WRITE PERMISSION.
 
 
-MUNMAP() SPECIFICATIONS:
+------MUNMAP() SPECIFICATIONS-----
 
 int munmap(void* addr);
 

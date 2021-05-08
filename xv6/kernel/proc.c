@@ -806,40 +806,57 @@ int lseek(int fd, int offset, int origin) {
 */
 void* mmap(int fd, int length, int offset, int flags) {
 
-  // addr of mapped memory
-  void* addr;
-
   // checks valid args and makes sure MAP_FILE and MAP_SHARED aren't
   // both true at the same time (flags == 3)
   if(length < 0 || fd < 0 || flags < 0 || flags > 2)
     return (void*) -1;
 
+  void* addr;
+  struct proc *p = myproc();
+  struct file *f;
+  char buf[length]; // does this work lmao
+
+  // allocate and map memory of size length
+  // mem is already zero'd out
+  if(!allocuvm(p->pgdir, p->sz, p->sz + length))
+    return (void*) -1;
+
+  // How to obtain allocated mem addr from table??
+  // addr = ??
+
   switch(flags) {
-    case(MAP_FILE): // MAP_PRIVATE with file
-
-    // open the file and user readi/writei to write
-    // that file to some space in memory.
-
+    case MAP_FILE: // MAP_PRIVATE with file
     // Note: writes to this region should be written
     // back to the original file (if original file allowed writes)
     // If original file didn't allow writes; kill process that is
     // attempting to write
 
+    // obtain the file
+    f = p -> ofile[fd];
+    if(length + offset > f -> size)
+      return (void*) -1;
+
+    // write file into buffer
+    if(readi(f->ip, &buf, offset, length) < 0)
+      return (void*) -1;
+
+    // copy file into memory
+    if(copyout(p->pgdir, addr, &buf, length) < 0)
+      return (void*) -1;
+
+    //somehow mark addr as private and a file? (book keeping)
     break;
-    case(MAP_SHARED): // MAP_SHARED no file
-
-    // map shared anon memory of size length
-    // mem should be zero'd out
-
+    case MAP_SHARED: // MAP_SHARED no file
     // Note: writes to this region will be visible to
     // other processes sharing the mapping
 
+    // somehow mark addr as public/shared (book keeping)
     break;
-    case(MAP_PRIVATE): // MAP_PRIVATE no file 
+    case MAP_PRIVATE: // MAP_PRIVATE no file 
+    // Note: writes to this region will NOT be visible 
+    // to other processes
 
-    // map private anon memory of size length
-    // mem should be zero'd out
-
+    // somehow mark addr as private? (book keeping)
     break;
   }
 
