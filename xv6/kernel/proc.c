@@ -824,13 +824,13 @@ void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
     if(a == PGROUNDUP(oldsz))
       addr = mem;
     if(mem == 0){
-      cprintf("allocuvm out of memory\n");
+      cprintf("mmap_alloc out of memory\n");
       deallocuvm(pgdir, newsz, oldsz);
       return (void*) -1;
     }
     memset(mem, 0, PGSIZE);
     if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
-      cprintf("allocuvm out of memory (2)\n");
+      cprintf("mmap_alloc out of memory (2)\n");
       deallocuvm(pgdir, newsz, oldsz);
       kfree(mem);
       return (void*) -1;
@@ -839,15 +839,17 @@ void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
   return addr;
 }
 
+// mmap_dealloc() ?
+
 /*
   Places a file into main memory OR reserves anonymous memory.
-  The mappings should be stored somewhere.
+  The mappings are updated in the page table and 
+  additional mapping info is stored in the mem mapped table in
+  the proc struct
 
   Notes:
-    proc structure has pgdir variable (page table)
-    How to allocate a page? allocuvm from vm.c extends all proc mem
-    allocuvm uses kalloc() from kalloc.c!! This allocs a page of
-      physical mem
+   Should there be some kind of dealloc on failure?
+   How to get proper map table entry? 
 */
 void* mmap(int fd, int length, int offset, int flags) {
 
@@ -859,7 +861,11 @@ void* mmap(int fd, int length, int offset, int flags) {
   void* addr;
   struct proc *p = myproc();
   struct file *f;
-  char buf[length]; // does this work lmao
+  struct mme *entry;  // entry in the memory mapped table 
+  char buf[length];   // does this work lmao
+
+  // find a free entry in the mmt block
+  // entry = free_mmt_entry();
 
   // allocate and map memory of size length
   // mem is already zero'd out
@@ -868,11 +874,7 @@ void* mmap(int fd, int length, int offset, int flags) {
     return (void*) -1;
 
   switch(flags) {
-    case MAP_FILE: // MAP_PRIVATE with file
-    // Note: writes to this region should be written
-    // back to the original file (if original file allowed writes)
-    // If original file didn't allow writes; kill process that is
-    // attempting to write
+    case MAP_FILE:
 
     // obtain the file
     f = p -> ofile[fd];
@@ -891,23 +893,19 @@ void* mmap(int fd, int length, int offset, int flags) {
     if(copyout(p->pgdir, addr, &buf, length) < 0)
       return (void*) -1;
 
-    // somehow mark addr as private and a file? (book keeping)
-    // also keep track if writing is allowed (file permissions)
-    break;
-    case MAP_SHARED: // MAP_SHARED no file
-    // Note: writes to this region will be visible to
-    // other processes sharing the mapping
-
-    // somehow mark addr as public/shared (book keeping)
-    break;
-    case MAP_PRIVATE: // MAP_PRIVATE no file 
-    // Note: writes to this region will NOT be visible 
-    // to other processes
-
-    // somehow mark addr as private? (book keeping)
+    // keep track of file information in mem mapped table
+    entry -> ip = f -> ip;
+    entry -> fd = fd;
+    entry -> dirty = 0;
     break;
   }
 
+  // no additional processing needed for MAP_SHARED/MAP_PRIVATE
+
+  // update mem mapped table with new entry
+  entry -> MFLAGS = flags; // keeps track of private/shared/file
+  entry -> addr = addr;
+  entry -> sz = length;
   return addr;
 }
 
