@@ -52,6 +52,9 @@ CSE 306 HW5
 	shared and private mappings.
 
 ------David's Notes------
+****CURRENT PROBLEM**** 
+ Book keeping needs to be figured out 
+
 Book keeping:
  - every process has a page table. should another, separate page
    table be created to keep track of addr, flags, size
@@ -73,10 +76,7 @@ copyout() can be used to copy the files to the memory.
  - readi and writei into a private local buffer and then
    call copyout()?
 - How do we store the corresponding flags, size, and other stuff
-  for any particular address? This is a book keeping problem.
-**CURRENT PROBLEM** 
-  Need to check if copyout() copies more than a page. If not,
-  an alternative method needs to be used.
+  for any particular address? This is a book keeping problem. 
 
 Forking:
 - check out copyuvm() in vm.c; it copies a parent's page

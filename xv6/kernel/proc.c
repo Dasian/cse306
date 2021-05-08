@@ -878,12 +878,10 @@ void* mmap(int fd, int length, int offset, int flags) {
     // write file into buffer
     if(readi(f->ip, &buf, offset, length) < 0)
       return (void*) -1;
+    
     // copy file into memory
     if(copyout(p->pgdir, addr, &buf, length) < 0)
       return (void*) -1;
-
-    // alternatively we can write directly to addr
-    // BUT we need to update the correspond page table entries.
 
     //somehow mark addr as private and a file? (book keeping)
     break;
