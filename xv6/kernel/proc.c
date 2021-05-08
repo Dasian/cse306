@@ -817,7 +817,7 @@ void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
   for(; a < newsz; a += PGSIZE){
     mem = kalloc();
     // starting addr of allocated memory
-    if(a == PGROUNDUP(olds))
+    if(a == PGROUNDUP(oldsz))
       addr = mem;
     if(mem == 0){
       cprintf("allocuvm out of memory\n");
