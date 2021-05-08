@@ -107,7 +107,28 @@ trap(struct trapframe *tf)
             cpuid(), tf->trapno, tf->cs, tf->eip);
     lapiceoi();
     break;
+  #if HW5_pf_handler
+  case T_PGFLT: // handles page faults
 
+    // get faulting address through some func? 
+    // maybe rcr2() ?
+
+    // check if faulting addr lies in addr space mapped
+    // by mmap (check the linked list)
+
+    // if in addr space:
+    //  make page resident in memory (mmap? what? isn't it already?)
+    //   - if page can't be allocated just kill proc
+    //     and print error
+    //  satisfy COW semantics
+
+    // if not in addr space kill the process probably?
+
+    // write dirty pages here? or arrange some sort of 
+    // system for writing dirty pages
+
+  break;
+  #endif
   //PAGEBREAK: 13
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){
@@ -117,27 +138,12 @@ trap(struct trapframe *tf)
       //panic("trap");
       return;
     }
-    #if HW5_pf_handler
-
-    // check if faulting addr lies in addr space mapped
-    // by mmap (check the linked list)
-
-    // if in addr space: how do we determine this?
-    //  make page resident in memory
-    //  COW semantics
-
-    // write dirty pages?
-
-    #endif
-    
-    #if !HW5_pf_handler
     // In user space, assume process misbehaved.
     cprintf("pid %d %s: trap %d err %d on cpu %d "
             "eip 0x%x addr 0x%x--kill proc\n",
             myproc()->pid, myproc()->name, tf->trapno,
             tf->err, cpuid(), tf->eip, rcr2());
     myproc()->killed = 1;
-    #endif
   }
 
   #if HW3_cpu_util // updates p -> cpu_util every second

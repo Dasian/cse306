@@ -50,8 +50,7 @@ CSE 306 HW5
 
 ------David's Notes------
 ****CURRENT PROBLEM**** 
- How to allocate page to keep the map table? similar to 
- how page tables are allocated.
+ Page fault handler implementation in trap.c
 
 Book keeping:
  - kernel memory allocator needs to maintain a ref cnt of phy p?
