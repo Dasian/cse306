@@ -946,6 +946,7 @@ int munmap(void* addr) {
   // addr doesn't exist in the table
   if(mme == 0)
     return -1;
+  len = mme -> sz;
   // Removing mme from linked list
   if(mme -> prev == mme && mme -> next == 0) { // both head and tail
     memset(mme, 0, sizeof(struct mme));
