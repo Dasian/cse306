@@ -876,8 +876,12 @@ void* mmap(int fd, int length, int offset, int flags) {
       return (void*) -1;
 
     // write file into buffer
-    if(readi(f->ip, &buf, offset, length) < 0)
+    ilock(f->ip);
+    if(readi(f->ip, &buf, offset, length) < 0) {
+      iunlockput(ip);
       return (void*) -1;
+    }
+    iunlockput(f->ip);
     
     // copy file into memory
     if(copyout(p->pgdir, addr, &buf, length) < 0)
