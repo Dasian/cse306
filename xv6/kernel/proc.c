@@ -793,7 +793,7 @@ int lseek(int fd, int offset, int origin) {
   return offset;
 }
 
-// following is implemented for HW5 but not used unless the macro is set
+// Everything below is implemented for HW5
 
 /*
   Helper function for mmap. Allocates newsz-oldsz space in pages.
@@ -839,8 +839,6 @@ void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
   }
   return addr;
 }
-
-// mmap_dealloc() ?
 
 /*
   Finds an empty entry slot in a processes memory mapped table
