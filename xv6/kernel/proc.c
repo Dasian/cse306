@@ -129,6 +129,7 @@ found:
   // allocate and set values for map pages table
   p -> mme = -1;              // no entries in table
   p -> mmt_start = kalloc();  // page where the table is located
+  p->space = 1;                //Offset for below the kernbase
 
   return p;
 }
@@ -890,11 +891,16 @@ void* mmap(int fd, int length, int offset, int flags) {
     return (void*) -1;
   }
 
+  //Assigning the memory to the virtual memory
+  addr = (KERNBASE - p->space);                   //(For first entry it is KERNBASE - 1)
+  if(addr <= p -> sz)                             //Checks if the addr goes into the process stuff
+    return (void*) -1;
+  p->space = p->space + length;                   //For the next memory to use
   // allocate and map memory of size length
   // mem is already zero'd out
-  addr = mmap_alloc(p->pgdir, p->sz, p->sz + length);
-  if(addr < 0)
-    return (void*) -1;
+  //addr = mmap_alloc(p->pgdir, p->sz, p->sz + length);
+  //if(addr < 0)
+  //  return (void*) -1;
 
   switch(flags) {
     case MAP_FILE:
