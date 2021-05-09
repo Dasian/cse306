@@ -834,7 +834,9 @@ void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
       return (void*) -1;
     }
     memset(mem, 0, PGSIZE);
-    if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
+    // Change perm here (mappages also adds PTE_P flag)
+    // I just removed | PTE_W
+    if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_U) < 0){
       cprintf("mmap_alloc out of memory (2)\n");
       deallocuvm(pgdir, newsz, oldsz);
       kfree(mem);
