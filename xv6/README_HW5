@@ -23,31 +23,16 @@ CSE 306 HW5
 
 ------TODO------
 
-	Figure out how to implement sys_munmap in kernel/sysproc.c
-
 	Augment the kernel memory allocator so as to maintain a 
 	reference count associated with each physical page.
 	- book keeping
 
-	Implement page table updates and writing dirty pages
-	in munmap()
+	Implement writing back dirty pages in pf handler and munmap
+
+	Satisfy all requirements regarding COW semantics (copy
+	on write) in the pf handler
 
 	Modify fork() [in proc.c] so proper pages are inherited. 
-
-	Implement (or extend) page fault handler so that it 
-	determines whether the faulting addr lies within the region
-	of the virtual addr space mapped via mmap(). If it does, it
-	should take appropriate actions to make the page resident 
-	and satisfy all requirements regarding COW semantics (copy
-	on write) and it should arrange for the writing back of 
-	dirty pages 
-
-	Create a scheme for keeping track of dirty pages associated
-	with memory mapped files and arrange for them to be written
-	back to the underlying file at a suitable time; Certainly by
-	the time the last shared mapping of the file has been deleted
-	using munmap()
-	- book keeping?
 
 	Implement user mode programs to show the functinality.
 	Should show the various types of mappings and behavior of 
