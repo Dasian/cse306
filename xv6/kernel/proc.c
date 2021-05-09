@@ -836,6 +836,7 @@ void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
     memset(mem, 0, PGSIZE);
     // Change perm here (mappages also adds PTE_P flag)
     // I just removed | PTE_W
+    // Write through and present flags? 
     if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_U) < 0){
       cprintf("mmap_alloc out of memory (2)\n");
       deallocuvm(pgdir, newsz, oldsz);
@@ -981,10 +982,10 @@ int munmap(void* addr) {
     memset(mme, 0, sizeof(struct mme));
   }
   
+  // Write back dirty pages
+  
 
-  // update page table entries
-  // shouldn't be dirty but if it is we need to write back
-  // so either do it here or call page handler somehow?
+  // update page table entries 
   for(int i=0; i<len; i+= PGSIZE) {
     // what does this func even do; go check it out
     pte = walkpgdir(p->pgdir, addr+size, 1);

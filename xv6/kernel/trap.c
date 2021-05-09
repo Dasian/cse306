@@ -110,23 +110,60 @@ trap(struct trapframe *tf)
   #if HW5_pf_handler
   case T_PGFLT: // handles page faults
 
+    struct proc* p = myproc();
+
     // get faulting address through some func? 
     // maybe rcr2() ?
+    void* addr;
 
     // check if faulting addr lies in addr space mapped
     // by mmap (check the linked list)
+    // While going through the map list, it also writes
+    // dirty pages back (beginning to entry)
+    struct mme *entry = p -> mme;
+    do {
+      if(entry->addr >= addr && (entry->addr + entry->sz) <= addr)
+        break;
 
-    // if in addr space:
-    //  make page resident in memory (mmap? what? isn't it already?)
-    //   - if page can't be allocated just kill proc
-    //     and print error
-    //  satisfy COW semantics
+      // write dirty pages back to file
 
-    // if not in addr space kill the process probably?
+      entry -> next;
+    } while(entry != 0);
 
-    // write dirty pages here? or arrange some sort of 
-    // system for writing dirty pages
+    if(entry == 0) { // not a mapped entry; page fault exception
+      if(myproc() == 0 || (tf->cs&3) == 0){
+        // In kernel, it must be our mistake.
+        cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
+                tf->trapno, cpuid(), tf->eip, rcr2());
+        //panic("trap");
+        return;
+      }
+        // In user space, assume process misbehaved.
+        cprintf("pid %d %s: trap %d err %d on cpu %d "
+                "eip 0x%x addr 0x%x--kill proc\n",
+                myproc()->pid, myproc()->name, tf->trapno,
+                tf->err, cpuid(), tf->eip, rcr2());
+        myproc()->killed = 1;
+      }
+    else { // addr is within mapped entry space
 
+      // get page associated with the faulting address (addr)
+      // note: entry only contains the starting addr of the region
+
+      //  make page resident in memory
+      //   - if page can't be allocated just kill proc
+      //     and print error
+
+
+      //  Copy on write stuff?
+
+      // Write remaining dirty pages back (entry to end)
+      do {
+        if(entry -> dirty)
+          // write back
+        entry -> next;
+      } while(entry != 0);
+    }
   break;
   #endif
   //PAGEBREAK: 13
