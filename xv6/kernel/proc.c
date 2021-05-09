@@ -879,7 +879,6 @@ void* mmap(int fd, int length, int offset, int flags) {
   struct proc *p = myproc();
   struct file *f;
   struct mme *entry;  // entry in the memory mapped table 
-  char buf[length];   // does this work lmao
 
   // find a free entry in the mmt block
   entry = find_free_mmt_entry(p->mmt_start);
@@ -900,18 +899,6 @@ void* mmap(int fd, int length, int offset, int flags) {
     // obtain the file
     f = p -> ofile[fd];
     if(length + offset > f -> size)
-      return (void*) -1;
-
-    // write file into buffer
-    ilock(f->ip);
-    if(readi(f->ip, &buf, offset, length) < 0) {
-      iunlockput(ip);
-      return (void*) -1;
-    }
-    iunlockput(f->ip);
-    
-    // copy file into memory
-    if(copyout(p->pgdir, addr, &buf, length) < 0)
       return (void*) -1;
 
     // keep track of file information in mem mapped table
