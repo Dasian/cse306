@@ -28,7 +28,7 @@ int setdate(struct rtcdate *r);
 int timerrate(int *hz);
 int lseek(int, int, int);
 void* mmap(int, int, int, int);
-int munmap(void* addr);
+int munmap(void* addr, int);
 
 
 // ulib.c
