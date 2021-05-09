@@ -15,6 +15,11 @@ CSE 306 HW5
 		4. Page fault COW (copy on write) stuff/extending
 			page fault handler
 		5. Implement a user program to show functionality
+	Priorities (in order):
+	 - Fix mmap/munmap (table entry stuff)
+	 - Page Fault handler (loading, writing back)
+	 - Forking
+	 - User Program implementation
 
 ------TODO------
 
