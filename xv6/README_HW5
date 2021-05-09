@@ -28,6 +28,8 @@ CSE 306 HW5
 	- book keeping
 
 	Implement writing back dirty pages in pf handler and munmap
+	- where are dirty bits set? Writing to one page needs to be
+	  reflected in the mme linked list
 
 	Satisfy all requirements regarding COW semantics (copy
 	on write) in the pf handler
@@ -40,7 +42,10 @@ CSE 306 HW5
 
 ------David's Notes------
 ****CURRENT PROBLEM**** 
- Page fault handler implementation in trap.c
+ mmap_alloc
+ - Growing memory with allocuvm also needs to update 
+   myproc() -> sz
+ - How do we reserve a user memory address range?
 
 Book keeping:
  - kernel memory allocator needs to maintain a ref cnt of phy p?
@@ -126,10 +131,45 @@ user test program: user/maptest.c user/Makefile
 syscall implementation: usys.S kernel/sysproc.c 
 	user/user.h kernel/syscall.h kernel/syscall.c
 
+mmap():
 Since every process will have its own memmory mapped files,
-mmap() was implemented in kernel/proc.c. mmap() called
-allocuvm() to allocate page table entries and expand the
-process to prev_size + length. 
+mmap() was implemented in kernel/proc.c. 
+mmap() reserves a space in the user address space by
+****INSERT HOW IT RESERVES USER ADDRESS****
+This reserves the user memory.
+The function also creates a new entry in the mapped linked
+list which is used for bookkeeping [Explained in next section].
+
+Bookkeeping in the proc structure:
+We kept track of various mapping information for every mmap()
+call. This includes the starting addr, the size,
+file information, and permissions that were provided from
+the mmap call. This information was kept track of in a linked
+list; one node for every mapping/call to mmap. The head of the
+list is kept in the proc structure. It is doubly linked where
+node_prev points to itself if it's the head and node_next points 
+to 0 if its to tail. The entire list exists in a page allocated
+by using kalloc(). The nodes are a struct defined in proc.h.
+During munmap() an entry is released back to the page and 
+can be later reused by mmap().
+
+munmap(): 
+This function finds the entries in the map linked list that
+corresponds with the address. It removes the entry from the
+linked list, and it also updates the corresponding page
+table entries. The that was returned by mmap was also 0d
+out. Before updating these things however, mmap writes back
+dirty entries.
+
+Page Fault handler:
+This is located in trap.c and is toggled by the HW5_pf_handler
+macro in kernel/hwinit.h (Default to True in this hw). It
+checks if the faulting address is in any of the mapped ranges
+(iterates through the mapped linked list). If it isn't, an
+exception is raised but if it is, further processing is done.
+If the file flag is set, the file with the proper offset is
+loaded as the physical address in the page table entry. Dirty
+pages are also written back whenever the handler is called.
 
 *********************************
 *********************************

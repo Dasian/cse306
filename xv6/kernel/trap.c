@@ -154,8 +154,9 @@ trap(struct trapframe *tf)
       //   - if page can't be allocated just kill proc
       //     and print error
 
+      // Update page table entry (was previously invalid)
 
-      //  Copy on write stuff?
+      // Copy on write stuff?
 
       // Write remaining dirty pages back (entry to end)
       do {
