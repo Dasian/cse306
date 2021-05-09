@@ -898,7 +898,7 @@ void* mmap(int fd, int length, int offset, int flags) {
 
     // obtain the file
     f = p -> ofile[fd];
-    if(length + offset > f -> size)
+    if(length + offset > f -> ip -> size)
       return (void*) -1;
 
     // keep track of file information in mem mapped table
