@@ -141,8 +141,11 @@ int sys_mmap(void) {
 
 int sys_munmap(void) {
   void* addr;
+  int length;
 
   // not sure how to implement the check here?
+  if(argint(1, &length) < 0 || argptr(0, &addr, length) < 0)
+    return -1;
 
   return munmap(addr);
 }
