@@ -47,7 +47,7 @@ struct mme {
   struct inode *ip;
   int fd;          // not sure if fd is needed
   int dirty;
-}
+};
 
 // Per-process state
 struct proc {
