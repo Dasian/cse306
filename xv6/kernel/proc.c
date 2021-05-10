@@ -863,6 +863,23 @@ struct mme* find_free_mmt_entry(struct mme* start) {
 }
 
 /*
+  Write input page back to file
+  *ONLY CALL IF THE ENTRY IS DIRTY
+
+  entry is the node in the map linked list
+  addr is the addr of the CHANGED PAGE to be written back
+*/
+int mmap_write_dirty(struct mme* entry, void* addr) {
+  int tmp;
+
+  ilock(entry -> ip);
+  tmp = writei(entry -> ip, addr, entry -> offset+(addr-entry->addr), PGSIZE);
+  iunlock(entry -> ip);
+
+  return tmp;
+}
+
+/*
   Places a file into main memory OR reserves anonymous memory.
   The mappings are updated in the page table and 
   additional mapping info is stored in the mem mapped table in
@@ -1005,12 +1022,6 @@ int munmap(void* addr) {
     }
     memset(mme, 0, sizeof(struct mme));
   }
-
-  // update page table entries 
-  //for(int i=0; i<len; i+= PGSIZE) {
-    // what does this func even do; go check it out
-  //  pte = walkpgdir(p->pgdir, addr+size, 1);
-  //}
 
   // zero out memory? security hazard if we don't
   memset(addr, 0, len);
