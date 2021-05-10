@@ -27,6 +27,27 @@ int main(int argc, char* argv[]) {
 
 	#if HW5_userprog
 
+	// Show file mapping on single process
+	int fd = open("tmp.txt", O_CREATE | O_RDWR);
+	if(fd < 0) {
+		pritntf("couldn't create file using open; ending\n");
+		exit();
+	}
+	char* addr = mmap(fd, 10, 0, MAP_PRIVATE | MAP_FILE);
+	printf("Created and mapped file tmp.txt of size 10\n");
+	
+	printf("Writing AAA in the file in memory\n");
+	memset(addr, 'A', 3);
+
+	printf("Unmapping file\n");
+	munmap((void*) addr, 10);
+
+	char buf[4];
+	read(fd, &buf, 3);
+	buf[3] = '\0';
+	printf("Printing the contents of the file using read\n%s\n",buf);
+
+
 	// All of these require multi process execution
 	// By completing these it is implied that the same
 	// operations work on a single proc execution
@@ -56,5 +77,7 @@ int main(int argc, char* argv[]) {
 	// Both write to it
 	// Both read it
 	// Should be different
+
+	exit();
 	#endif
 }
