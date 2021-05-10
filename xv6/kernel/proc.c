@@ -948,8 +948,9 @@ void* mmap(int fd, int length, int offset, int flags) {
 int munmap(void* addr) {
   struct proc *p = myproc();
   struct mme *mme = p -> mme;
-  struct pte_t *pte;
+  pte_t *pte;
   int len;
+  int isFile = 0;
 
   // Removing entry from map table
   // no entries exist in the table
@@ -965,6 +966,23 @@ int munmap(void* addr) {
   if(mme == 0)
     return -1;
   len = mme -> sz;
+  if(mme->MFLAGS & MAP_FILE)              //Check if the mapping is for MAP_FILE
+  {
+    isFile = 1;
+  }
+
+  if(isFile == 1)
+  {
+    for(int i = 0; i < len; i = i + PGSIZE)         //Each table entry takes up PGSIZE so increment by that much
+    {
+      if(pte = walkpgdir(p->pgdir, addr, 0) == 0)
+        return -1;
+      if(*pte & PTE_D)
+      {
+        //Do the writing to the file if it is dirty
+      }
+    }
+  }
 
   // Removing mme from linked list
   if(mme -> prev == mme && mme -> next == 0) { // both head and tail
@@ -992,10 +1010,10 @@ int munmap(void* addr) {
   
 
   // update page table entries 
-  for(int i=0; i<len; i+= PGSIZE) {
+  //for(int i=0; i<len; i+= PGSIZE) {
     // what does this func even do; go check it out
-    pte = walkpgdir(p->pgdir, addr+size, 1);
-  }
+  //  pte = walkpgdir(p->pgdir, addr+size, 1);
+  //}
 
   // zero out memory? security hazard if we don't
   memset(addr, 0, len);
