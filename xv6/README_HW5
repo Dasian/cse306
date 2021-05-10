@@ -50,10 +50,7 @@ CSE 306 HW5
 
 ------David's Notes------
 ****CURRENT PROBLEM**** 
- mmap_alloc
- - Growing memory with allocuvm also needs to update 
-   myproc() -> sz
- - How do we reserve a user memory address range?
+ Page fault handler implementation in trap.c
 
 Book keeping:
  - kernel memory allocator needs to maintain a ref cnt of phy p?
@@ -134,7 +131,7 @@ have been turned off by default to prevent unforseen bugs.
 
 Files Changed:
 homework toggle: kernel/hwinit.h
-function implementation: kernel/proc.h kernel/proc.c
+function implementation: kernel/proc.h kernel/proc.c kernel/trap.c kernel/vm.c kernel/def.h
 user test program: user/maptest.c user/Makefile
 syscall implementation: usys.S kernel/sysproc.c 
 	user/user.h kernel/syscall.h kernel/syscall.c
@@ -143,7 +140,13 @@ mmap():
 Since every process will have its own memmory mapped files,
 mmap() was implemented in kernel/proc.c. 
 mmap() reserves a space in the user address space by
-****INSERT HOW IT RESERVES USER ADDRESS****
+Used the space in the heap in order to "reserve" memory in 
+the virtual address for the memory to be mapped.
+	Started by using the space below the kernel(heap) 
+	because the changes in hw2 are not shown in this version.
+	Made sure to keep it page aligned by using PGROUNDDOWN.
+	Updated a value stored in proc struct to keep count of
+	how much of the heap below the KERNBASE has been used.
 This reserves the user memory.
 The function also creates a new entry in the mapped linked
 list which is used for bookkeeping [Explained in next section].
@@ -175,6 +178,13 @@ macro in kernel/hwinit.h (Default to True in this hw). It
 checks if the faulting address is in any of the mapped ranges
 (iterates through the mapped linked list). If it isn't, an
 exception is raised but if it is, further processing is done.
+
+if the range that caused the fault is found. Alloc memory and
+then map the pa received from the alloc to the va that caused
+the fault. (mappages is likely to have aligned the va properly)
+	To use mappages get rid of the static from the mappage
+	function and add it to def.h
+
 If the file flag is set, the file with the proper offset is
 loaded as the physical address in the page table entry. Dirty
 pages are also written back whenever the handler is called.

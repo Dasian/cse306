@@ -122,7 +122,7 @@ trap(struct trapframe *tf)
     // dirty pages back (beginning to entry)
     struct mme *entry = p -> mme;
     do {
-      if(entry->addr >= addr && ((int)entry->addr + entry->sz) <= addr)
+      if(entry->addr >= addr && ((int)entry->addr + entry->sz) <= addr)   //This means within range
         break;
 
       // write dirty pages back to file
@@ -149,14 +149,15 @@ trap(struct trapframe *tf)
 
       // get page associated with the faulting address (addr)
       // note: entry only contains the starting addr of the region
+      char* pa = kalloc();
+      mappages(p->pgdir, addr, PGSIZE, (uint)pa, (PTE_P | PTE_W | PTE_U));
 
       //  make page resident in memory
       //   - if page can't be allocated just kill proc
       //     and print error
 
-      // Update page table entry (was previously invalid)
 
-      // Copy on write stuff?
+      //  Copy on write stuff?
 
       // Write remaining dirty pages back (entry to end)
       do {
