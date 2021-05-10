@@ -136,7 +136,7 @@ int sys_mmap(void) {
     || argint(3, &flags))
     return -1;
 
-  return mmap(fd, length, offset, flags);
+  return (int)mmap(fd, length, offset, flags);
 }
 
 int sys_munmap(void) {
@@ -144,7 +144,7 @@ int sys_munmap(void) {
   int length;
 
   // not sure how to implement the check here?
-  if(argint(1, &length) < 0 || argptr(0, &addr, length) < 0)
+  if(argint(1, &length) < 0 || argptr(0, (void*)&addr, length) < 0)
     return -1;
 
   return munmap(addr, length);
