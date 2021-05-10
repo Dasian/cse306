@@ -34,6 +34,8 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
+
+
 // added for hw5
 // entries in the memory mapped table
 struct mme {
