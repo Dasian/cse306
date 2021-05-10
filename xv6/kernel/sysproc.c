@@ -147,5 +147,5 @@ int sys_munmap(void) {
   if(argint(1, &length) < 0 || argptr(0, &addr, length) < 0)
     return -1;
 
-  return munmap(addr);
+  return munmap(addr, length);
 }

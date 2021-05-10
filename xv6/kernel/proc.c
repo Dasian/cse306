@@ -945,11 +945,11 @@ void* mmap(int fd, int length, int offset, int flags) {
 
   Returns 0 on success and -1 on failure ig since it didn't specify
 */
-int munmap(void* addr) {
+int munmap(void* addr, int length) {
   struct proc *p = myproc();
   struct mme *mme = p -> mme;
   pte_t *pte;
-  int len;
+  //int len;
   int isFile = 0;
 
   // Removing entry from map table
@@ -965,7 +965,7 @@ int munmap(void* addr) {
   // entry with corresponding addr doesn't exist in the table
   if(mme == 0)
     return -1;
-  len = mme -> sz;
+  //len = mme -> sz;
   if(mme->MFLAGS & MAP_FILE)              //Check if the mapping is for MAP_FILE
   {
     isFile = 1;
@@ -973,7 +973,7 @@ int munmap(void* addr) {
 
   if(isFile == 1)
   {
-    for(int i = 0; i < len; i = i + PGSIZE)         //Each table entry takes up PGSIZE so increment by that much
+    for(int i = 0; i < length; i = i + PGSIZE)         //Each table entry takes up PGSIZE so increment by that much
     {
       if(pte = walkpgdir(p->pgdir, addr, 0) == 0)
         return -1;
@@ -1013,7 +1013,7 @@ int munmap(void* addr) {
   //}
 
   // zero out memory? security hazard if we don't
-  memset(addr, 0, len);
+  memset(addr, 0, length);
 
   return 0;
 }
