@@ -2,6 +2,85 @@ David Espiritu
 Vicky Chan
 CSE 306 HW5
 
+-------General Info-------
+
+hw5 and specific sections of hw5 can be turned on/off based on
+the flags located in kernel/hwinit.h. The previous homeworks
+have been turned off by default to prevent unforseen bugs.
+
+---------EXERCISE README-----------
+
+Files Changed:
+homework toggle: kernel/hwinit.h
+function implementation: kernel/proc.h kernel/proc.c kernel/trap.c kernel/vm.c kernel/defs.h
+user test program: user/maptest.c user/Makefile
+syscall implementation: usys.S kernel/sysproc.c 
+	user/user.h kernel/syscall.h kernel/syscall.c
+
+mmap():
+Since every process will have its own memmory mapped files,
+mmap() was implemented in kernel/proc.c. 
+mmap() reserves a space in the user address space by
+Used the space in the heap in order to "reserve" memory in 
+the virtual address for the memory to be mapped.
+	Started by using the space below the kernel(heap) 
+	because the changes in hw2 are not shown in this version.
+	Made sure to keep it page aligned by using PGROUNDDOWN.
+	Updated a value stored in proc struct to keep count of
+	how much of the heap below the KERNBASE has been used.
+This reserves the user memory.
+The function also creates a new entry in the mapped linked
+list which is used for bookkeeping [Explained in next section].
+
+Bookkeeping in the proc structure:
+We kept track of various mapping information for every mmap()
+call. This includes the starting addr, the size,
+file information, and permissions that were provided from
+the mmap call. This information was kept track of in a linked
+list; one node for every mapping/call to mmap. The head of the
+list is kept in the proc structure. It is doubly linked where
+node_prev points to itself if it's the head and node_next points 
+to 0 if its to tail. The entire list exists in a page allocated
+by using kalloc(). The nodes are a struct defined in proc.h.
+During munmap() an entry is released back to the page and 
+can be later reused by mmap().
+
+munmap(): 
+This function finds the entries in the map linked list that
+corresponds with the address. It removes the entry from the
+linked list, and it also updates the corresponding page
+table entries. The that was returned by mmap was also 0d
+out. Before updating these things however, mmap writes back
+dirty entries.
+
+Page Fault handler:
+This is located in trap.c and is toggled by the HW5_pf_handler
+macro in kernel/hwinit.h (Default to True in this hw). It
+checks if the faulting address is in any of the mapped ranges
+(iterates through the mapped linked list). If it isn't, an
+exception is raised but if it is, further processing is done.
+
+if the range that caused the fault is found. Alloc memory and
+then map the pa received from the alloc to the va that caused
+the fault. (mappages is likely to have aligned the va properly)
+	To use mappages get rid of the static from the mappage
+	function and add it to def.h
+
+If the file flag is set, the file with the proper offset is
+loaded as the physical address in the page table entry. Dirty
+pages are also written back whenever the handler is called.
+
+User Program:
+The user program "maptest" creates a file of len 10, maps it
+using mmap(), writes 3 As to that region of memory, unmaps it,
+then reads the file using read() and prints the contents of the
+file to the screen.
+
+*********************************
+*********************************
+The following were our personal notes
+Feel free to browse if you so choose :)
+
 -----For Vicky-----
 	Implementation I believe should be done in proc.c.
 	I recommend looking at vm.c and reading this doc.
@@ -117,201 +196,3 @@ User Test Program:
 - Show MAP_PRIVATE, MAP_SHARED, and MAP_FILE
 - Also needs to show forking and COW semantics
 
-
-
-*********************************
-*********************************
--------General Info-------
-
-hw5 and specific sections of hw5 can be turned on/off based on
-the flags located in kernel/hwinit.h. The previous homeworks
-have been turned off by default to prevent unforseen bugs.
-
----------EXERCISE README-----------
-
-Files Changed:
-homework toggle: kernel/hwinit.h
-function implementation: kernel/proc.h kernel/proc.c kernel/trap.c kernel/vm.c kernel/defs.h
-user test program: user/maptest.c user/Makefile
-syscall implementation: usys.S kernel/sysproc.c 
-	user/user.h kernel/syscall.h kernel/syscall.c
-
-mmap():
-Since every process will have its own memmory mapped files,
-mmap() was implemented in kernel/proc.c. 
-mmap() reserves a space in the user address space by
-Used the space in the heap in order to "reserve" memory in 
-the virtual address for the memory to be mapped.
-	Started by using the space below the kernel(heap) 
-	because the changes in hw2 are not shown in this version.
-	Made sure to keep it page aligned by using PGROUNDDOWN.
-	Updated a value stored in proc struct to keep count of
-	how much of the heap below the KERNBASE has been used.
-This reserves the user memory.
-The function also creates a new entry in the mapped linked
-list which is used for bookkeeping [Explained in next section].
-
-Bookkeeping in the proc structure:
-We kept track of various mapping information for every mmap()
-call. This includes the starting addr, the size,
-file information, and permissions that were provided from
-the mmap call. This information was kept track of in a linked
-list; one node for every mapping/call to mmap. The head of the
-list is kept in the proc structure. It is doubly linked where
-node_prev points to itself if it's the head and node_next points 
-to 0 if its to tail. The entire list exists in a page allocated
-by using kalloc(). The nodes are a struct defined in proc.h.
-During munmap() an entry is released back to the page and 
-can be later reused by mmap().
-
-munmap(): 
-This function finds the entries in the map linked list that
-corresponds with the address. It removes the entry from the
-linked list, and it also updates the corresponding page
-table entries. The that was returned by mmap was also 0d
-out. Before updating these things however, mmap writes back
-dirty entries.
-
-Page Fault handler:
-This is located in trap.c and is toggled by the HW5_pf_handler
-macro in kernel/hwinit.h (Default to True in this hw). It
-checks if the faulting address is in any of the mapped ranges
-(iterates through the mapped linked list). If it isn't, an
-exception is raised but if it is, further processing is done.
-
-if the range that caused the fault is found. Alloc memory and
-then map the pa received from the alloc to the va that caused
-the fault. (mappages is likely to have aligned the va properly)
-	To use mappages get rid of the static from the mappage
-	function and add it to def.h
-
-If the file flag is set, the file with the proper offset is
-loaded as the physical address in the page table entry. Dirty
-pages are also written back whenever the handler is called.
-
-User Program:
-The user program "maptest" creates a file of len 10, maps it
-using mmap(), writes 3 As to that region of memory, unmaps it,
-then reads the file using read() and prints the contents of the
-file to the screen.
-
-*********************************
-*********************************
-
---------HW SPECIFICATIONS--------
-
-The C compiler might delay writes to SHARED memory unless they are
-done through vars declared as volatile. If we aren't seeing any
-updates to shared memory you should consider looking at the 
-assembly code :(
-
-Don't try to implement any page replacement! 
-If a physical page cannot be allocated during page fault handling,
-then just kill the faulting process. 
-A diagnostic message should also be printed the console
-
-Fork shenanigans:
-	A child process created by fork() should inherit its parent's 
-	mappings created by mmap(), with the same flags.
-
-	Mappings created with the flag MAP_SHARED should share the same
-	physical memory with the child and parent.
-
-	Mappings created WITHOUT MAP_SHARED should obey Copy-on-write 
-	semantics
-
-Copy-on-write semantics:
-after a fork, the parent and child share any
-resident physical memory pages associated with the mapping but
-write permissions have been disabled in the page tables for 
-each process. A read fault for either the parent or child on
-a non-resident page in the region will result in the newly 
-allocated physical page being shared between the parent and child.
-Upon a WRITE fault caused by an attempt by the parent or child to 
-write a page in the mapped region, a new page should be allocated
-regardless of whether the data was already resident, and the data
-should be copied from an existing resident page into the new page.
-The new page should be installed in the page table for the faulting
-process, WITH WRITE PERMISSION.
-
--------MMAP() SPECIFICATIONS-----
-
-void *mmap(int fd, size_t length, off_t offset, int flags);
-(parameters were implemented as all type int)
-
-map either a file or anon mem into calling process' addr space
-syscall 28
-
-args:
-	fd - file desc of file to be mapped (use if flag is set)
-
-	length - length of mapped region
-	
-	offset - offset of the file to be mapped
-		make sure length + offset <= filesize
-	
-	flags:
-		MAP_PRIVATE (0) 
-			Mapping is private to the calling process
-		
-		MAP_SHARED (1)
-			Physical mem allocated will be shared among all
-			processes that map that "object" (see fork() 
-			discussion)
-
-			Write to the mapped region will be immediately visible
-			to other processess sharing the mapping
-		
-		MAP_FILE (2)
-			Can be OR'ed into flags argument
-			MAY NOT BE USED WITH MAP_SHARED
-
-			IF SPECIFIED:
-			Fd and offset should be used when specified
-			Once a file has been mapped using mmap(), calling
-			close() on the original fd SHOULD NOT have ANY effect
-			on the mapping.
-			Writes to the mapped region should be WRITTEN BACK to
-			the original file, assuming the flags used to open the
-			original file descriptor permitted writing
-			If an attempt is made to write to a mem mapped file 
-			that didn't originally allow writing, the process 
-			attempting this should be killed.
-
-			readi() and writei() should be used to r/w the file.
-			Data should be copied between buffer cache and resident
-			pages allocated for the memory-mapped file. 
-
-			DO NOT ATTEMPT TO FIX THE FOLLOWING PROBLEM:	
-			- This creates a certain problem of coherence
-			concerning writes to a file using the write() syscall
-			and writes occuring via mem mapping, as two versions
-			of the file can exist at once: one in the buffer cache
-			and one in a mapped physical page. Real systems 
-			typically avoid this by integrating the buffer cache 
-			and virtual memory system, BUT WE WILL NOT ATTEMPT THIS
-
-
-			IF NOT SPECIFIED:
-			the "object" to be mapped is ANONYMOUS memory.
-			The memory should be zero filled on first access.
-
-return
-	(void *) -1 on failure
-	starting addr of chosen range on success
-
-------MUNMAP() SPECIFICATIONS-----
-
-int munmap(void* addr, int length);
-
-unmap a region previously mapped using mmap()
-syscall 29
-
-addr arg is an addr previously returned by mmap()
-The entire region associated with that addr should be unmapped
-
-If the region was mapped using MAP_FILE:
-	by the time mmap() returns, any dirty pages will have been
-	written back to the underlying file
-
-returns 0 on sucess, otherwise -1
