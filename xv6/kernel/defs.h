@@ -9,6 +9,9 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+#ifndef __ASSEMBLER__
+typedef uint pte_t;
+#endif
 
 // bio.c
 void            binit(void);
@@ -127,6 +130,8 @@ int 			getdate(struct rtcdate *r);
 int 			setdate(struct rtcdate *r);
 // int 			timerrate(int *hz);
 int 			lseek(int, int, int);
+void*           mmap(int fd, int length, int offset, int flags);
+int             munmap(void* addr, int length);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -193,7 +198,7 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 int             mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
-//pte_t*          walkpgdir(pde_t *pgdir, const void *va, int alloc);
+pte_t*          walkpgdir(pde_t *pgdir, const void *va, int alloc);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
