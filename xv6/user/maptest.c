@@ -30,22 +30,22 @@ int main(int argc, char* argv[]) {
 	// Show file mapping on single process
 	int fd = open("tmp.txt", O_CREATE | O_RDWR);
 	if(fd < 0) {
-		pritntf("couldn't create file using open; ending\n");
+		pritntf(1, "couldn't create file using open; ending\n");
 		exit();
 	}
 	char* addr = mmap(fd, 10, 0, MAP_PRIVATE | MAP_FILE);
-	printf("Created and mapped file tmp.txt of size 10\n");
+	printf(1, "Created and mapped file tmp.txt of size 10\n");
 	
-	printf("Writing AAA in the file in memory\n");
+	printf(1, "Writing AAA in the file in memory\n");
 	memset(addr, 'A', 3);
 
-	printf("Unmapping file\n");
+	printf(1, "Unmapping file\n");
 	munmap((void*) addr, 10);
 
 	char buf[4];
 	read(fd, &buf, 3);
 	buf[3] = '\0';
-	printf("Printing the contents of the file using read\n%s\n",buf);
+	printf(1, "Printing the contents of the file using read\n%s\n",buf);
 
 
 	// All of these require multi process execution

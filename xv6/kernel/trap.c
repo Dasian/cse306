@@ -59,6 +59,7 @@ trap(struct trapframe *tf)
       exit();
     return;
   }
+  struct proc *p;
 
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
@@ -107,14 +108,15 @@ trap(struct trapframe *tf)
             cpuid(), tf->trapno, tf->cs, tf->eip);
     lapiceoi();
     break;
-  #if HW5_pf_handler
+  // #if HW5_pf_handler
   case T_PGFLT: // handles page faults
 
-    struct proc* p = myproc();
+    //struct proc *p;
+    p = myproc();
 
     // get faulting address through some func? 
     // maybe rcr2() ?
-    void* addr = rcr2();
+    void* addr = (void*) rcr2();
 
     // check if faulting addr lies in addr space mapped
     // by mmap (check the linked list)
@@ -122,7 +124,7 @@ trap(struct trapframe *tf)
     // dirty pages back (beginning to entry)
     struct mme *entry = p -> mme;
     do {
-      if(entry->addr >= addr && ((int)entry->addr + entry->sz) <= addr)   //This means within range
+      if(entry->addr >= addr && ((int)entry->addr + entry->sz) <= (int)addr)   //This means within range
         break;
 
       // write dirty pages back to file
@@ -167,7 +169,7 @@ trap(struct trapframe *tf)
       } while(entry != 0);
     }
   break;
-  #endif
+  //#endif
   //PAGEBREAK: 13
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){
