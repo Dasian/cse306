@@ -127,7 +127,7 @@ trap(struct trapframe *tf)
 
       // write dirty pages back to file
 
-      entry -> next;
+      entry = entry -> next;
     } while(entry != 0);
 
     if(entry == 0) { // not a mapped entry; page fault exception
@@ -163,7 +163,7 @@ trap(struct trapframe *tf)
       do {
         if(entry -> dirty)
           // write back
-        entry -> next;
+        entry = entry -> next;
       } while(entry != 0);
     }
   break;
