@@ -131,7 +131,7 @@ have been turned off by default to prevent unforseen bugs.
 
 Files Changed:
 homework toggle: kernel/hwinit.h
-function implementation: kernel/proc.h kernel/proc.c kernel/trap.c kernel/vm.c kernel/def.h
+function implementation: kernel/proc.h kernel/proc.c kernel/trap.c kernel/vm.c kernel/defs.h
 user test program: user/maptest.c user/Makefile
 syscall implementation: usys.S kernel/sysproc.c 
 	user/user.h kernel/syscall.h kernel/syscall.c
@@ -188,6 +188,12 @@ the fault. (mappages is likely to have aligned the va properly)
 If the file flag is set, the file with the proper offset is
 loaded as the physical address in the page table entry. Dirty
 pages are also written back whenever the handler is called.
+
+User Program:
+The user program "maptest" creates a file of len 10, maps it
+using mmap(), writes 3 As to that region of memory, unmaps it,
+then reads the file using read() and prints the contents of the
+file to the screen.
 
 *********************************
 *********************************
