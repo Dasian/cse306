@@ -58,7 +58,7 @@ struct proc {
   int cpu_runnable_ticks;
   int cpu_wait;
   pde_t* pgdir;                // Page table
-  struct mme* mmt_start;       // (HW5) Address of map table start
+  void* mmt_start;       // (HW5) Address of map table start
   struct mme* mme;             // (HW5) First entry in map table
   int space;                    // The space into the heap that has been used
   char *kstack;                // Bottom of kernel stack for this process

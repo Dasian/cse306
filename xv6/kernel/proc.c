@@ -127,7 +127,7 @@ found:
   #endif
 
   // allocate and set values for map pages table
-  p -> mme = -1;              // no entries in table
+  p -> mme = (void *)-1;              // no entries in table
   p -> mmt_start = kalloc();  // page where the table is located
   p->space = 1;                //Offset for below the kernbase
 
@@ -909,7 +909,7 @@ void* mmap(int fd, int length, int offset, int flags) {
   }
 
   //Assigning the memory to the virtual memory
-  addr = (KERNBASE - p->space);                   //(For first entry it is KERNBASE - 1)
+  addr = (void *)(KERNBASE - p->space);                   //(For first entry it is KERNBASE - 1)
   addr = PGROUNDDOWN((uint)addr);
   if(addr <= p -> sz)                             //Checks if the addr goes into the process stuff
     return (void*) -1;
