@@ -873,7 +873,7 @@ int mmap_write_dirty(struct mme* entry, void* addr) {
   int tmp;
 
   ilock(entry -> ip);
-  tmp = writei(entry -> ip, addr, entry -> offset+(addr-entry->addr), PGSIZE);
+  tmp = writei(entry -> ip, addr, entry -> offset+((int)addr-(int)entry->addr), PGSIZE);
   iunlock(entry -> ip);
 
   return tmp;
@@ -931,6 +931,7 @@ void* mmap(int fd, int length, int offset, int flags) {
     entry -> ip = f -> ip;
     entry -> fd = fd;
     entry -> dirty = 0;
+    entry -> offset = offset;
     break;
   }
 

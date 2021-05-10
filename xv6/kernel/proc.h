@@ -40,6 +40,7 @@ struct mme {
   void* addr;       // starting virtual addr of mapped memory
   int sz;           // size of allocated memory
   int MFLAGS;       // Mapped flags (Shared, private, file)
+  int offset;       //The offset
   struct mme* prev;
   struct mme* next; 
 

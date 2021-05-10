@@ -114,7 +114,7 @@ trap(struct trapframe *tf)
 
     // get faulting address through some func? 
     // maybe rcr2() ?
-    void* addr;
+    void* addr = rcr2();
 
     // check if faulting addr lies in addr space mapped
     // by mmap (check the linked list)
@@ -122,7 +122,7 @@ trap(struct trapframe *tf)
     // dirty pages back (beginning to entry)
     struct mme *entry = p -> mme;
     do {
-      if(entry->addr >= addr && (entry->addr + entry->sz) <= addr)
+      if(entry->addr >= addr && ((int)entry->addr + entry->sz) <= addr)
         break;
 
       // write dirty pages back to file
