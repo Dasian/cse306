@@ -6,6 +6,8 @@
 #include "kernel/spinlock.h"
 #include "kernel/sleeplock.h"
 #include "kernel/file.h"
+#include "kernel/mmu.h"
+#include "kernel/param.h"
 #include "kernel/proc.h"
 
 #include "kernel/hwinit.h"
@@ -30,7 +32,7 @@ int main(int argc, char* argv[]) {
 	// Show file mapping on single process
 	int fd = open("tmp.txt", O_CREATE | O_RDWR);
 	if(fd < 0) {
-		pritntf(1, "couldn't create file using open; ending\n");
+		printf(1, "couldn't create file using open; ending\n");
 		exit();
 	}
 	char* addr = mmap(fd, 10, 0, MAP_PRIVATE | MAP_FILE);
