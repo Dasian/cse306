@@ -994,12 +994,12 @@ int munmap(void* addr, int length) {
   {
     for(int i = 0; i < length; i = i + PGSIZE)         //Each table entry takes up PGSIZE so increment by that much
     {
-      if(pte = walkpgdir(p->pgdir, addr, 0) == 0)
+      if(pte = walkpgdir(p->pgdir, (void *)((int)addr + i), 0) == 0)
         return -1;
       if(*pte & PTE_D)
       {
         //Do the writing to the file if it is dirty
-        //mmap_write_dirty(mme, )
+        mmap_write_dirty(mme, (void *)((int)addr + i));
       }
     }
   }
