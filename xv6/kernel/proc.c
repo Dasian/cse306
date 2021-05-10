@@ -129,6 +129,7 @@ found:
   // allocate and set values for map pages table
   p -> mme = -1;              // no entries in table
   p -> mmt_start = kalloc();  // page where the table is located
+  p->space = 1;                //Offset for below the kernbase
 
   return p;
 }
@@ -862,6 +863,23 @@ struct mme* find_free_mmt_entry(struct mme* start) {
 }
 
 /*
+  Write input page back to file
+  *ONLY CALL IF THE ENTRY IS DIRTY
+
+  entry is the node in the map linked list
+  addr is the addr of the CHANGED PAGE to be written back
+*/
+int mmap_write_dirty(struct mme* entry, void* addr) {
+  int tmp;
+
+  ilock(entry -> ip);
+  tmp = writei(entry -> ip, addr, entry -> offset+((int)entry->addr - (int)addr), PGSIZE);
+  iunlock(entry -> ip);
+
+  return tmp;
+}
+
+/*
   Places a file into main memory OR reserves anonymous memory.
   The mappings are updated in the page table and 
   additional mapping info is stored in the mem mapped table in
@@ -890,11 +908,17 @@ void* mmap(int fd, int length, int offset, int flags) {
     return (void*) -1;
   }
 
+  //Assigning the memory to the virtual memory
+  addr = (KERNBASE - p->space);                   //(For first entry it is KERNBASE - 1)
+  addr = PGROUNDDOWN((uint)addr);
+  if(addr <= p -> sz)                             //Checks if the addr goes into the process stuff
+    return (void*) -1;
+  p->space = (KERNBASE - (uint)addr) + length;                   //For the next memory to use
   // allocate and map memory of size length
   // mem is already zero'd out
-  addr = mmap_alloc(p->pgdir, p->sz, p->sz + length);
-  if(addr < 0)
-    return (void*) -1;
+  //addr = mmap_alloc(p->pgdir, p->sz, p->sz + length);
+  //if(addr < 0)
+  //  return (void*) -1;
 
   switch(flags) {
     case MAP_FILE:
@@ -908,6 +932,7 @@ void* mmap(int fd, int length, int offset, int flags) {
     entry -> ip = f -> ip;
     entry -> fd = fd;
     entry -> dirty = 0;
+    entry -> offset = offset;
     break;
   }
 
@@ -939,11 +964,12 @@ void* mmap(int fd, int length, int offset, int flags) {
 
   Returns 0 on success and -1 on failure ig since it didn't specify
 */
-int munmap(void* addr) {
+int munmap(void* addr, int length) {
   struct proc *p = myproc();
   struct mme *mme = p -> mme;
-  struct pte_t *pte;
-  int len;
+  pte_t *pte;
+  //int len;
+  int isFile = 0;
 
   // Removing entry from map table
   // no entries exist in the table
@@ -958,7 +984,25 @@ int munmap(void* addr) {
   // entry with corresponding addr doesn't exist in the table
   if(mme == 0)
     return -1;
-  len = mme -> sz;
+  //len = mme -> sz;
+  if(mme->MFLAGS & MAP_FILE)              //Check if the mapping is for MAP_FILE
+  {
+    isFile = 1;
+  }
+
+  if(isFile == 1)
+  {
+    for(int i = 0; i < length; i = i + PGSIZE)         //Each table entry takes up PGSIZE so increment by that much
+    {
+      if(pte = walkpgdir(p->pgdir, addr, 0) == 0)
+        return -1;
+      if(*pte & PTE_D)
+      {
+        //Do the writing to the file if it is dirty
+        //mmap_write_dirty(mme, )
+      }
+    }
+  }
 
   // Removing mme from linked list
   if(mme -> prev == mme && mme -> next == 0) { // both head and tail
@@ -981,18 +1025,9 @@ int munmap(void* addr) {
     }
     memset(mme, 0, sizeof(struct mme));
   }
-  
-  // Write back dirty pages
-  
-
-  // update page table entries 
-  for(int i=0; i<len; i+= PGSIZE) {
-    // what does this func even do; go check it out
-    pte = walkpgdir(p->pgdir, addr+size, 1);
-  }
 
   // zero out memory? security hazard if we don't
-  memset(addr, 0, len);
+  memset(addr, 0, length);
 
   return 0;
 }

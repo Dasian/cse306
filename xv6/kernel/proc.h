@@ -40,6 +40,7 @@ struct mme {
   void* addr;       // starting virtual addr of mapped memory
   int sz;           // size of allocated memory
   int MFLAGS;       // Mapped flags (Shared, private, file)
+  int offset;       //The offset
   struct mme* prev;
   struct mme* next; 
 
@@ -47,7 +48,7 @@ struct mme {
   struct inode *ip;
   int fd;          // not sure if fd is needed
   int dirty;
-}
+};
 
 // Per-process state
 struct proc {
@@ -59,6 +60,7 @@ struct proc {
   pde_t* pgdir;                // Page table
   struct mme* mmt_start;       // (HW5) Address of map table start
   struct mme* mme;             // (HW5) First entry in map table
+  int space;                    // The space into the heap that has been used
   char *kstack;                // Bottom of kernel stack for this process
   enum procstate state;        // Process state
   int pid;                     // Process ID
