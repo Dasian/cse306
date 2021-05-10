@@ -873,7 +873,7 @@ int mmap_write_dirty(struct mme* entry, void* addr) {
   int tmp;
 
   ilock(entry -> ip);
-  tmp = writei(entry -> ip, addr, entry -> offset+((int)addr-(int)entry->addr), PGSIZE);
+  tmp = writei(entry -> ip, addr, entry -> offset+((int)entry->addr - (int)addr), PGSIZE);
   iunlock(entry -> ip);
 
   return tmp;
@@ -910,9 +910,10 @@ void* mmap(int fd, int length, int offset, int flags) {
 
   //Assigning the memory to the virtual memory
   addr = (KERNBASE - p->space);                   //(For first entry it is KERNBASE - 1)
+  addr = PGROUNDDOWN((uint)addr);
   if(addr <= p -> sz)                             //Checks if the addr goes into the process stuff
     return (void*) -1;
-  p->space = p->space + length;                   //For the next memory to use
+  p->space = (KERNBASE - (uint)addr) + length;                   //For the next memory to use
   // allocate and map memory of size length
   // mem is already zero'd out
   //addr = mmap_alloc(p->pgdir, p->sz, p->sz + length);
@@ -998,6 +999,7 @@ int munmap(void* addr, int length) {
       if(*pte & PTE_D)
       {
         //Do the writing to the file if it is dirty
+        //mmap_write_dirty(mme, )
       }
     }
   }
