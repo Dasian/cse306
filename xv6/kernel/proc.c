@@ -1005,9 +1005,6 @@ int munmap(void* addr) {
     }
     memset(mme, 0, sizeof(struct mme));
   }
-  
-  // Write back dirty pages
-  
 
   // update page table entries 
   //for(int i=0; i<len; i+= PGSIZE) {
