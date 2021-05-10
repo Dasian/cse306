@@ -127,8 +127,8 @@ found:
   #endif
 
   // allocate and set values for map pages table
-  p -> mme = -1;              // no entries in table
-  p -> mmt_start = kalloc();  // page where the table is located
+  p -> mme = (void*) -1;              // no entries in table
+  p -> mmt_start = (void*) kalloc();  // page where the table is located
   p->space = 1;                //Offset for below the kernbase
 
   return p;
@@ -801,54 +801,6 @@ int lseek(int fd, int offset, int origin) {
 // Everything below is implemented for HW5
 
 /*
-  Helper function for mmap. Allocates newsz-oldsz space in pages.
-  The page table is updated and the starting address of the 
-  memory to be mapped is returned on success, -1 on failure.
-
-  This code is nearly an exact copy of allocuvm() in vm.c
-  with some minor adjustments (return value and setting addr)
-
-  Should this be adjusted to add bookkeeping stuff?
-  Only one page could be marked dirty and only
-  that page should be written back into memory.
-  The memory permissions should be changed no?
-*/
-void* mmap_alloc(pde_t *pgdir, uint oldsz, uint newsz) {
-  void* addr;
-  char *mem;
-  uint a;
-
-  if(newsz >= KERNBASE)
-    return (void*) -1;
-  if(newsz < oldsz)
-    return (void*) -1;
-
-  a = PGROUNDUP(oldsz);
-  for(; a < newsz; a += PGSIZE){
-    mem = kalloc();
-    // starting addr of allocated memory
-    if(a == PGROUNDUP(oldsz))
-      addr = mem;
-    if(mem == 0){
-      cprintf("mmap_alloc out of memory\n");
-      deallocuvm(pgdir, newsz, oldsz);
-      return (void*) -1;
-    }
-    memset(mem, 0, PGSIZE);
-    // Change perm here (mappages also adds PTE_P flag)
-    // I just removed | PTE_W
-    // Write through and present flags? 
-    if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_U) < 0){
-      cprintf("mmap_alloc out of memory (2)\n");
-      deallocuvm(pgdir, newsz, oldsz);
-      kfree(mem);
-      return (void*) -1;
-    }
-  }
-  return addr;
-}
-
-/*
   Finds an empty entry slot in a processes memory mapped table
   Takes as input the starting address of the allocated page that
    houses the table
@@ -909,9 +861,9 @@ void* mmap(int fd, int length, int offset, int flags) {
   }
 
   //Assigning the memory to the virtual memory
-  addr = (KERNBASE - p->space);                   //(For first entry it is KERNBASE - 1)
-  addr = PGROUNDDOWN((uint)addr);
-  if(addr <= p -> sz)                             //Checks if the addr goes into the process stuff
+  addr = (void*) (KERNBASE - p->space);                   //(For first entry it is KERNBASE - 1)
+  addr = (void*) PGROUNDDOWN((uint)addr);
+  if((int) addr <= p -> sz)                          //Checks if the addr goes into the process stuff
     return (void*) -1;
   p->space = (KERNBASE - (uint)addr) + length;                   //For the next memory to use
   // allocate and map memory of size length
@@ -944,7 +896,7 @@ void* mmap(int fd, int length, int offset, int flags) {
   entry -> sz = length;
 
   // add entry to map table list
-  if(p -> mme == -1) { // no nodes in linked list
+  if(p -> mme == (void*) -1) { // no nodes in linked list
     entry -> prev = entry;
     entry -> next = 0;
   }
@@ -973,7 +925,7 @@ int munmap(void* addr, int length) {
 
   // Removing entry from map table
   // no entries exist in the table
-  if(mme == -1)
+  if(mme == (void *) -1)
     return -1;
 
   // find entry in table
@@ -994,7 +946,7 @@ int munmap(void* addr, int length) {
   {
     for(int i = 0; i < length; i = i + PGSIZE)         //Each table entry takes up PGSIZE so increment by that much
     {
-      if(pte = walkpgdir(p->pgdir, (void *)((int)addr + i), 0) == 0)
+      if((pte = walkpgdir(p->pgdir, (void *)((int)addr + i), 0)) == (pte_t*) 0)
         return -1;
       if(*pte & PTE_D)
       {
@@ -1008,7 +960,7 @@ int munmap(void* addr, int length) {
   if(mme -> prev == mme && mme -> next == 0) { // both head and tail
     memset(mme, 0, sizeof(struct mme));
     // no entries exist in the table
-    p -> mme = -1;
+    p -> mme = (void*) -1;
   }
   else {
     if(mme -> prev == mme) { // mme is head 
